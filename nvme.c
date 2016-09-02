@@ -2706,6 +2706,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 	int err = 0;
 	int dfd, mfd;
 	int flags = opcode & 1 ? O_RDONLY : O_WRONLY | O_CREAT;
+	int metadata_flags = O_RDONLY;
 	int mode = S_IRUSR | S_IWUSR |S_IRGRP | S_IWGRP| S_IROTH;
 
 	const char *start_block = "64-bit addr of first block to access";
@@ -2790,7 +2791,9 @@ static int submit_io(int opcode, char *command, const char *desc,
 		{0}
 	};
 
-	dfd = mfd = opcode & 1 ? STDIN_FILENO : STDOUT_FILENO;
+	dfd = opcode & 1 ? STDIN_FILENO : STDOUT_FILENO;
+	mfd = STDIN_FILENO;
+
 	argconfig_parse(argc, argv, desc, command_line_options,
 			&defaults, &cfg, sizeof(cfg));
 
@@ -2817,7 +2820,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 		mfd = dfd;
 	}
 	if (strlen(cfg.metadata)){
-		mfd = open(cfg.metadata, flags, mode);
+		mfd = open(cfg.metadata, metadata_flags, mode);
 		if (mfd < 0) {
 			perror(cfg.data);
 			return EINVAL;
@@ -2836,7 +2839,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 		fprintf(stderr, "failed to read data buffer from input file\n");
 		return EINVAL;
 	}
-	if ((opcode & 1) && cfg.metadata_size &&
+	if (cfg.metadata_size &&
 				read(mfd, (void *)mbuffer, cfg.metadata_size) < 0) {
 		fprintf(stderr, "failed to read meta-data buffer from input file\n");
 		return EINVAL;
@@ -2876,10 +2879,6 @@ static int submit_io(int opcode, char *command, const char *desc,
 	else {
 		if (!(opcode & 1) && write(dfd, (void *)buffer, cfg.data_size) < 0) {
 			fprintf(stderr, "failed to write buffer to output file\n");
-			return EINVAL;
-		} else if (!(opcode & 1) && cfg.metadata_size &&
-				write(mfd, (void *)mbuffer, cfg.metadata_size) < 0) {
-			fprintf(stderr, "failed to write meta-data buffer to output file\n");
 			return EINVAL;
 		} else
 			fprintf(stderr, "%s: Success\n", command);
