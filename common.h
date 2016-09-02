@@ -1,11 +1,20 @@
-#ifndef _COMMON_H
-#define _COMMON_H
+#ifndef COMMON_H
+#define COMMON_H
 
-#define offsetof(x, y)	__builtin_offsetof(x, y)
+#include "linux/nvme.h"
 
-#define __round_mask(x, y) ((__typeof__(x))((y)-1))
-#define round_up(x, y) ((((x)-1) | __round_mask(x, y))+1)
+enum {
+	TERSE = 0x1u,	// only show a few useful fields
+	HUMAN = 0x2u,	// interpret some values for humans
+	VS    = 0x4u,	// print vendor specific data area
+	RAW   = 0x8u,	// just dump raw bytes
+};
 
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+void d(unsigned char *buf, int len, int width, int group);
+
+long double int128_to_double(__u8 *data);
+
+void show_nvme_id_ctrl(struct nvme_id_ctrl *ctrl, unsigned int mode);
+void show_nvme_id_ns(struct nvme_id_ns *ns, unsigned int flags);
 
 #endif

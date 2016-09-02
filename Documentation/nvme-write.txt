@@ -1,5 +1,5 @@
-nvme-write(1)
-=============
+nvme-compare(1)
+===============
 
 NAME
 ----
@@ -33,12 +33,6 @@ OPTIONS
 --start-block=<slba>::
 -s <slba>::
 	Start block.
-
---block-count::
--c::
-	The number of blocks to transfer. This is a zeroes based value to
-	align with the kernel's use of this field. (ie. 0 means transfer
-	1 block).
 
 --latency::
 -t::

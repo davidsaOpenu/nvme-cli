@@ -20,7 +20,6 @@ SYNOPSIS
 		[--timeout=<to> | -t <to>]
 		[--show-command | --dry-run | -s]
 		[--raw-binary | -b]
-		[--prefill=<prefill> | -p <prefill>]
 
 DESCRIPTION
 -----------
@@ -92,18 +91,10 @@ OPTIONS
 	Print the raw returned buffer to stdout if the command returns
 	a structure.
 
--p::
---prefill::
-	Prefill the buffer with a predetermined byte value. Defaults to 0.
-	This may be useful if the data you are writing is shorter
-	than the required buffer, and you need to pad it with a known
-	value. It may also be useful if you need to confirm if a device
-	is overwriting a buffer for a data-in command.
-
 EXAMPLES
 --------
 * The following will run the admin command with opcode=6 and cdw10=1, which
- corresponds to an identify controller command. This example requires the
+ cooresponds to an identify controller command. This example requires the
  data-len param be 4096, which is the size of the returned structure. The -r
  option is used because it is a data-in command
 +

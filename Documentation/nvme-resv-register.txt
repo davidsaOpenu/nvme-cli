@@ -20,7 +20,7 @@ OPTIONS
 -n <nsid>::
 --namespace-id=<nsid>::
 	Override the nsid field. If using the admin character device,
-	this parameter is required.
+	this paramter is required.
 
 -c <crkey>::
 --crkey=<crkey>::

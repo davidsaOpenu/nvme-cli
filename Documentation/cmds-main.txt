@@ -1,5 +1,5 @@
 linknvme:nvme-admin-passthru[1]::
-	Admin Passthrough Command
+	Admin Passthrough Comand
 
 linknvme:nvme-compare[1]::
 	IO Compare
@@ -75,12 +75,6 @@ linknvme:nvme-read[1]::
 
 linknvme:nvme-write[1]::
 	Issue IO Write Command
-
-linknvme:nvme-write-zeroes[1]::
-	Issue IO Write Zeroes Command
-
-linknvme:nvme-write-uncor[1]::
-	Issue IO Write Uncorrectable Command
 
 linknvme:nvme-resv-acquire[1]::
 	Acquire Namespace Reservation

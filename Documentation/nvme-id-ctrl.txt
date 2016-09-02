@@ -9,7 +9,6 @@ SYNOPSIS
 --------
 [verse]
 'nvme id-ctrl' <device> [-v | --vendor-specific] [-b | --raw-binary]
-			[-o <fmt> | --output-format=<fmt>]
 
 DESCRIPTION
 -----------
@@ -38,13 +37,9 @@ OPTIONS
 
 -H::
 --human-readable::
-	This option will parse and format many of the bit fields
+	This option will parse and format many of the bitfields
 	into human-readable formats.
 
--o <format>::
---output-format=<format>::
-              Set the reporting format to 'normal', 'json', or
-              'binary'. Only one output format can be used at a time.
 
 EXAMPLES
 --------
