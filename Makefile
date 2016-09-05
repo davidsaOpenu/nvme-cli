@@ -1,4 +1,4 @@
-CFLAGS += -std=gnu99 -O2 -g -Wall -Werror
+CFLAGS += -std=gnu99  -g -Wall -Werror
 CPPFLAGS += -D_GNU_SOURCE
 NVME = nvme
 INSTALL ?= install
