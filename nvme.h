@@ -16,6 +16,7 @@
 #define _NVME_H
 
 #include <linux/types.h>
+#include <sys/time.h>
 #include "plugin.h"
 
 /* NQN names in commands fields specified one size */
@@ -364,16 +365,20 @@ struct nvme_reservation_status {
 /* I/O commands */
 
 enum nvme_opcode {
-	nvme_cmd_flush		= 0x00,
-	nvme_cmd_write		= 0x01,
-	nvme_cmd_read		= 0x02,
+	nvme_cmd_flush			= 0x00,
+	nvme_cmd_write			= 0x01,
+	nvme_cmd_read			= 0x02,
 	nvme_cmd_write_uncor	= 0x04,
-	nvme_cmd_compare	= 0x05,
+	nvme_cmd_compare		= 0x05,
 	nvme_cmd_write_zeroes	= 0x08,
-	nvme_cmd_dsm		= 0x09,
+	nvme_cmd_dsm			= 0x09,
+	nvme_cmd_obj_write		= 0x0b,
+	nvme_cmd_obj_read		= 0x0c,
 	nvme_cmd_resv_register	= 0x0d,
 	nvme_cmd_resv_report	= 0x0e,
 	nvme_cmd_resv_acquire	= 0x11,
+    nvme_cmd_obj_create     = 0x12,
+    nvme_cmd_obj_delete     = 0x13,
 	nvme_cmd_resv_release	= 0x15,
 };
 
@@ -608,5 +613,6 @@ int parse_and_open(int argc, char **argv, const char *desc,
 extern const char *devicename;
 
 int __id_ctrl(int argc, char **argv, struct command *cmd, struct plugin *plugin, void (*vs)(__u8 *vs));
+unsigned long long elapsed_utime(struct timeval start_time, struct timeval end_time);
 
 #endif /* _NVME_H */
