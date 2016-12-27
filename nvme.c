@@ -86,8 +86,7 @@ static struct program nvme = {
 	.extensions = &builtin,
 };
 
-static unsigned long long elapsed_utime(struct timeval start_time,
-					struct timeval end_time)
+unsigned long long elapsed_utime(struct timeval start_time, struct timeval end_time)
 {
 	unsigned long long ret = (end_time.tv_sec - start_time.tv_sec)*1000000 +
 		(end_time.tv_usec - start_time.tv_usec);
