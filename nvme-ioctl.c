@@ -116,14 +116,14 @@ int nvme_passthru(int fd, int ioctl_cmd, __u8 opcode, __u8 flags, __u16 rsvd,
 
 int nvme_io(int fd, __u8 opcode, __u64 slba, __u16 nblocks, __u16 control,
 	    __u32 dsmgmt, __u32 reftag, __u16 apptag, __u16 appmask, void *data,
-	    void *metadata)
+	    void *metadata, __u16 metadata_len)
 {
 	struct nvme_user_io io = {
 		.opcode		= opcode,
 		.flags		= 0,
 		.control	= control,
 		.nblocks	= nblocks,
-		.rsvd		= 0,
+		.rsvd		= metadata_len,
 		.metadata	= (__u64)(uintptr_t) metadata,
 		.addr		= (__u64)(uintptr_t) data,
 		.slba		= slba,
@@ -140,7 +140,7 @@ int nvme_read(int fd, __u64 slba, __u16 nblocks, __u16 control, __u32 dsmgmt,
 	      void *metadata)
 {
 	return nvme_io(fd, nvme_cmd_read, slba, nblocks, control, dsmgmt,
-		       reftag, apptag, appmask, data, metadata);
+		       reftag, apptag, appmask, data, metadata, 0);
 }
 
 int nvme_write(int fd, __u64 slba, __u16 nblocks, __u16 control, __u32 dsmgmt,
@@ -148,7 +148,7 @@ int nvme_write(int fd, __u64 slba, __u16 nblocks, __u16 control, __u32 dsmgmt,
 	       void *metadata)
 {
 	return nvme_io(fd, nvme_cmd_write, slba, nblocks, control, dsmgmt,
-		       reftag, apptag, appmask, data, metadata);
+		       reftag, apptag, appmask, data, metadata, 0);
 }
 
 int nvme_compare(int fd, __u64 slba, __u16 nblocks, __u16 control, __u32 dsmgmt,
@@ -156,7 +156,7 @@ int nvme_compare(int fd, __u64 slba, __u16 nblocks, __u16 control, __u32 dsmgmt,
 		 void *metadata)
 {
 	return nvme_io(fd, nvme_cmd_compare, slba, nblocks, control, dsmgmt,
-		       reftag, apptag, appmask, data, metadata);
+		       reftag, apptag, appmask, data, metadata, 0);
 }
 
 int nvme_passthru_io(int fd, __u8 opcode, __u8 flags, __u16 rsvd,

@@ -2157,6 +2157,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 	int err = 0;
 	int dfd, mfd;
 	int flags = opcode & 1 ? O_RDONLY : O_WRONLY | O_CREAT;
+	int metaflags = (opcode & 1 || opcode & 2) ? O_RDONLY : O_WRONLY | O_CREAT;
 	int mode = S_IRUSR | S_IWUSR |S_IRGRP | S_IWGRP| S_IROTH;
 	__u16 control = 0;
 	int phys_sector_size = 0;
@@ -2247,7 +2248,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 		mfd = dfd;
 	}
 	if (strlen(cfg.metadata)){
-		mfd = open(cfg.metadata, flags, mode);
+		mfd = open(cfg.metadata, metaflags, mode);
 		if (mfd < 0) {
 			perror(cfg.data);
 			return EINVAL;
@@ -2288,7 +2289,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 		goto free_and_return;
 	}
 
-	if ((opcode & 1) && cfg.metadata_size &&
+	if (((opcode & 1) || (opcode & 2)) && cfg.metadata_size &&
 				read(mfd, (void *)mbuffer, cfg.metadata_size) < 0) {
 		fprintf(stderr, "failed to read meta-data buffer from input file\n");
 		err = EINVAL;
@@ -2300,7 +2301,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 		printf("flags        : %02x\n", 0);
 		printf("control      : %04x\n", control);
 		printf("nblocks      : %04x\n", cfg.block_count);
-		printf("rsvd         : %04x\n", 0);
+		printf("rsvd (ms)    : %"PRIx64"\n", (uint64_t)cfg.metadata_size);
 		printf("metadata     : %"PRIx64"\n", (uint64_t)(uintptr_t)mbuffer);
 		printf("addr         : %"PRIx64"\n", (uint64_t)(uintptr_t)buffer);
 		printf("sbla         : %"PRIx64"\n", (uint64_t)cfg.start_block);
@@ -2314,7 +2315,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 
 	gettimeofday(&start_time, NULL);
 	err = nvme_io(fd, opcode, cfg.start_block, cfg.block_count, control, 0,
-			cfg.ref_tag, cfg.app_tag, cfg.app_tag_mask, buffer, mbuffer);
+			cfg.ref_tag, cfg.app_tag, cfg.app_tag_mask, buffer, mbuffer, cfg.metadata_size);
 	gettimeofday(&end_time, NULL);
 	if (cfg.latency)
 		printf(" latency: %s: %llu us\n",
@@ -2328,7 +2329,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 			fprintf(stderr, "failed to write buffer to output file\n");
 			err = EINVAL;
 			goto free_and_return;
-		} else if (!(opcode & 1) && cfg.metadata_size &&
+		} else if (!((opcode & 1) || (opcode & 2)) && cfg.metadata_size &&
 				write(mfd, (void *)mbuffer, cfg.metadata_size) < 0) {
 			fprintf(stderr, "failed to write meta-data buffer to output file\n");
 			err = EINVAL;
