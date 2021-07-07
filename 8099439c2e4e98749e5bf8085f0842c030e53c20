@@ -16,6 +16,23 @@
       "message": "recheck",
       "revId": "8099439c2e4e98749e5bf8085f0842c030e53c20",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ed39092_ecf64df7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2021-07-07T07:36:03Z",
+      "side": 1,
+      "message": "Lets add an explanation (userland-kernel contract) vs (kernel, nvme controller) contract rationals",
+      "revId": "8099439c2e4e98749e5bf8085f0842c030e53c20",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
