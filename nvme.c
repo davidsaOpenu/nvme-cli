@@ -58,6 +58,7 @@
 #define array_len(x) ((size_t)(sizeof(x) / sizeof(x[0])))
 #define min(x, y) (x) > (y) ? (y) : (x)
 #define max(x, y) (x) > (y) ? (x) : (y)
+#define OBJ_ID_LEN 64 /* contract with driver - max length of object id */
 
 static int fd;
 static struct stat nvme_stat;
@@ -2149,6 +2150,53 @@ static int resv_report(int argc, char **argv, struct command *cmd, struct plugin
 	return 0;
 }
 
+static int handle_obj_op(int argc, char **argv, int opcode, void *cfg, char* name)
+{
+	struct stat statbuf;
+	int err = 0;
+	struct config {
+		__u64 start_block;
+		__u64 data_size;
+		__u64 metadata_size;
+		__u32 ref_tag;
+		char  *data;
+		char  *metadata;
+		__u8  prinfo;
+		__u8  app_tag_mask;
+		__u32 app_tag;
+		int   limited_retry;
+		int   force_unit_access;
+		int   show;
+		int   dry_run;
+		int   latency;
+	};
+	struct config *ptr = (struct config*) cfg;
+
+	if ((argc < 3 && opcode != nvme_cmd_obj_list) || (argc < 2 && opcode == nvme_cmd_obj_list)) /*  unexpected number of arguments */
+	{
+		fprintf(stderr, "Invalid arguments, object command usage: nvme <command> <device> <filename>\n");
+		return EINVAL;
+	}
+	switch(opcode)
+	{
+		case nvme_cmd_obj_write:
+			if(!(err = stat(ptr->data, &statbuf)))
+				ptr->data_size = statbuf.st_size;
+			else
+			{
+				fprintf(stderr, "Could not check for file size\n");
+				return errno;
+			}
+			strncpy(name, argv[2], OBJ_ID_LEN);
+			break;
+		case nvme_cmd_obj_read:
+		case nvme_cmd_obj_delete:
+			strncpy(name, argv[2], OBJ_ID_LEN);
+	}
+	return 0;
+}
+
+
 static int submit_io(int opcode, char *command, const char *desc,
 		     int argc, char **argv)
 {
@@ -2320,6 +2368,188 @@ static int submit_io(int opcode, char *command, const char *desc,
 	if (cfg.latency)
 		printf(" latency: %s: %llu us\n",
 			command, elapsed_utime(start_time, end_time));
+	if (err < 0)
+		perror("submit-io");
+	else if (err)
+		printf("%s:%s(%04x)\n", command, nvme_status_to_string(err), err);
+	else {
+		if (!(opcode & 1) && write(dfd, (void *)buffer, cfg.data_size) < 0) {
+			fprintf(stderr, "failed to write buffer to output file\n");
+			err = EINVAL;
+			goto free_and_return;
+		} else if (!((opcode & 1) || (opcode & 2)) && cfg.metadata_size &&
+				write(mfd, (void *)mbuffer, cfg.metadata_size) < 0) { /* even for read cmd, we're still writing metadata (that contains object info) */
+			fprintf(stderr, "failed to write meta-data buffer to output file\n");
+			err = EINVAL;
+			goto free_and_return;
+		} else
+			fprintf(stderr, "%s: Success\n", command);
+	}
+ free_and_return:
+	free(buffer);
+	if (cfg.metadata_size)
+		free(mbuffer);
+	return err;
+}
+
+static int submit_obj_io(int opcode, char *command, const char *desc,
+		     int argc, char **argv)
+{
+	struct timeval start_time, end_time;
+	void *buffer = NULL, *mbuffer = NULL;
+	int err = 0;
+	int dfd, mfd;
+	int flags = opcode & 1 ? O_RDONLY : O_WRONLY | O_CREAT;
+	int metaflags = (opcode & 1 || opcode & 2) ? O_RDONLY : O_WRONLY | O_CREAT; /* in object strategy we have to write the metadata for both: read & write cmds (the metadata contains the object info...) */
+	int mode = S_IRUSR | S_IWUSR |S_IRGRP | S_IWGRP| S_IROTH;
+	__u16 control = 0;
+	int phys_sector_size = 0;
+	long long buffer_size = 0;
+	char name[64] = {0};
+	
+	const char *start_block = "64-bit addr of first block to access within the object";
+	const char *data_size = "size of data in bytes";
+	const char *metadata_size = "size of metadata in bytes";
+	const char *ref_tag = "reference tag (for end to end PI)";
+	const char *data = "data file";
+	const char *metadata = "metadata file";
+	const char *prinfo = "PI and check field";
+	const char *app_tag_mask = "app tag mask (for end to end PI)";
+	const char *app_tag = "app tag (for end to end PI)";
+	const char *limited_retry = "limit num. media access attempts";
+	const char *latency = "output latency statistics";
+	const char *force = "force device to commit data before command completes";
+	const char *show = "show command before sending";
+	const char *dry = "show command instead of sending";
+
+	struct config {
+		__u64 start_block;
+		__u64 data_size;
+		__u64 metadata_size;
+		__u32 ref_tag;
+		char  *data;
+		char  *metadata;
+		__u8  prinfo;
+		__u8  app_tag_mask;
+		__u32 app_tag;
+		int   limited_retry;
+		int   force_unit_access;
+		int   show;
+		int   dry_run;
+		int   latency;
+	};
+
+	struct config cfg = {
+		.start_block	 = 0,
+		.data_size       = 0,
+		.metadata_size   = 0,
+		.ref_tag         = 0,
+		.data            = "",
+		.metadata        = "",
+		.prinfo          = 0,
+		.app_tag_mask    = 0,
+		.app_tag         = 0,
+	};
+
+	const struct argconfig_commandline_options command_line_options[] = {
+		{"start-block",       's', "NUM",  CFG_LONG_SUFFIX, &cfg.start_block,       required_argument, start_block},
+		{"data-size",         'z', "NUM",  CFG_LONG_SUFFIX, &cfg.data_size,         required_argument, data_size},
+		{"metadata-size",     'y', "NUM",  CFG_LONG_SUFFIX, &cfg.metadata_size,     required_argument, metadata_size},
+		{"ref-tag",           'r', "NUM",  CFG_POSITIVE,    &cfg.ref_tag,           required_argument, ref_tag},
+		{"data",              'd', "FILE", CFG_STRING,      &cfg.data,              required_argument, data},
+		{"metadata",          'M', "FILE", CFG_STRING,      &cfg.metadata,          required_argument, metadata},
+		{"prinfo",            'p', "NUM",  CFG_BYTE,        &cfg.prinfo,            required_argument, prinfo},
+		{"app-tag-mask",      'm', "NUM",  CFG_BYTE,        &cfg.app_tag_mask,      required_argument, app_tag_mask},
+		{"app-tag",           'a', "NUM",  CFG_POSITIVE,    &cfg.app_tag,           required_argument, app_tag},
+		{"limited-retry",     'l', "",     CFG_NONE,        &cfg.limited_retry,     no_argument,       limited_retry},
+		{"force-unit-access", 'f', "",     CFG_NONE,        &cfg.force_unit_access, no_argument,       force},
+		{"show-command",      'v', "",     CFG_NONE,        &cfg.show,              no_argument,       show},
+		{"dry-run",           'w', "",     CFG_NONE,        &cfg.dry_run,           no_argument,       dry},
+		{"latency",           't', "",     CFG_NONE,        &cfg.latency,           no_argument,       latency},
+		{0}
+	};
+	
+	parse_and_open(argc, argv, desc, command_line_options, &cfg, sizeof(cfg));
+	handle_obj_op(argc, argv, opcode, &cfg, name);
+	dfd = mfd = opcode & 1 ? STDIN_FILENO : STDOUT_FILENO;
+	if (cfg.prinfo > 0xf)
+		return EINVAL;
+	control |= (cfg.prinfo << 10);
+	if (cfg.limited_retry)
+		control |= NVME_RW_LR;
+	if (cfg.force_unit_access)
+		control |= NVME_RW_FUA;
+	if (strlen(cfg.data)){
+		dfd = open(cfg.data, flags, mode);
+		if (dfd < 0) {
+			perror(cfg.data);
+			return EINVAL;
+		}
+		mfd = dfd;
+	}
+	if (strlen(cfg.metadata)){
+		mfd = open(cfg.metadata, metaflags, mode);
+		if (mfd < 0) {
+			perror(cfg.data);
+			return EINVAL;
+		}
+	}
+	if (!cfg.data_size && opcode != nvme_cmd_obj_delete)	{
+		fprintf(stderr, "data size not provided\n");
+		return EINVAL;
+	}
+
+	if (ioctl(fd, BLKPBSZGET, &phys_sector_size) < 0)
+		return errno;
+	buffer_size = (cfg.data_size/phys_sector_size + 1) * phys_sector_size;
+	if (cfg.data_size && 
+		posix_memalign(&buffer, getpagesize(), buffer_size))
+		return ENOMEM;
+	if (cfg.metadata_size) {
+		mbuffer = malloc(cfg.metadata_size);
+		if (!mbuffer) {
+ 			free(buffer);
+			return ENOMEM;
+		}
+	}
+
+	if ((opcode & 1) && read(dfd, (void *)buffer, cfg.data_size) < 0) {
+		fprintf(stderr, "failed to read data buffer from input file\n");
+		err = EINVAL;
+		goto free_and_return;
+	}
+	if (((opcode & 1) || (opcode & 2)) && cfg.metadata_size &&
+				read(mfd, (void *)mbuffer, cfg.metadata_size) < 0) {
+		fprintf(stderr, "failed to read meta-data buffer from input file\n");
+		err = EINVAL;
+		goto free_and_return;
+	}
+	
+	if (cfg.show) {
+		printf("opcode       : %02x\n", opcode);
+		printf("flags        : %02x\n", 0);
+		printf("control      : %04x\n", control);
+		printf("rsvd (ms)    : %"PRIx64"\n", (uint64_t)cfg.metadata_size);
+		printf("metadata     : %"PRIx64"\n", (uint64_t)(uintptr_t)mbuffer);
+		printf("addr         : %"PRIx64"\n", (uint64_t)(uintptr_t)buffer);
+		printf("dsmgmt       : %08x\n", 0);
+		printf("reftag       : %08x\n", cfg.ref_tag);
+		printf("apptag       : %04x\n", cfg.app_tag);
+		printf("appmask      : %04x\n", cfg.app_tag_mask);
+		if (cfg.dry_run)
+			goto free_and_return;
+	}
+	gettimeofday(&start_time, NULL);
+	if((err = nvme_obj_io(fd, opcode, cfg.start_block, buffer_size, &buffer, (__u8*)name)))
+	{
+		fprintf(stderr, "ioctl call failed\n");
+		goto free_and_return;
+	}
+	gettimeofday(&end_time, NULL);
+	if (cfg.latency)
+		printf(" latency: %s: %llu us\n",
+			command, elapsed_utime(start_time, end_time));
+	if (opcode == nvme_cmd_obj_delete) goto free_and_return;
 	if (err < 0)
 		perror("submit-io");
 	else if (err)
@@ -2670,6 +2900,30 @@ void register_extension(struct plugin *plugin)
 
 	nvme.extensions->tail->next = plugin;
 	nvme.extensions->tail = plugin;
+}
+
+static int object_write(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Copy given file into nvme object store";
+	return submit_obj_io(nvme_cmd_obj_write, "objw", desc, argc, argv);
+}
+
+static int object_read(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Read given file from nvme object store";
+	return submit_obj_io(nvme_cmd_obj_read, "objr", desc, argc, argv);
+}
+
+static int object_list(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "List all files saved in nvme object store";
+	return submit_obj_io(nvme_cmd_obj_list, "objl", desc, argc, argv);
+}
+
+static int object_delete(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Delete file from nvme object store";
+	return submit_obj_io(nvme_cmd_obj_delete, "objd", desc, argc, argv);
 }
 
 int main(int argc, char **argv)

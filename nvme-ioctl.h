@@ -23,6 +23,8 @@ int nvme_io(int fd, __u8 opcode, __u64 slba, __u16 nblocks, __u16 control,
 	      __u32 dsmgmt, __u32 reftag, __u16 apptag,
 	      __u16 appmask, void *data, void *metadata, __u16 metadata_len);
 
+int nvme_obj_io(int fd, __u8 opcode, __u64 start_block, __u32 data_size, void **data, __u8 *obj_id);
+
 int nvme_read(int fd, __u64 slba, __u16 nblocks, __u16 control,
 	      __u32 dsmgmt, __u32 reftag, __u16 apptag,
 	      __u16 appmask, void *data, void *metadata);
