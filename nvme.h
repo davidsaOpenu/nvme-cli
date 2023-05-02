@@ -377,6 +377,13 @@ enum nvme_opcode {
 	nvme_cmd_resv_release	= 0x15,
 };
 
+enum nvme_obj_opcode {
+	nvme_cmd_obj_read	= 0x0,
+	nvme_cmd_obj_write	= 0x3,
+	nvme_cmd_obj_list	= 0x4,
+	nvme_cmd_obj_delete	= 0x7,
+};
+
 enum {
 	NVME_RW_LR			= 1 << 15,
 	NVME_RW_FUA			= 1 << 14,
