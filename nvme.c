@@ -58,6 +58,9 @@
 #define array_len(x) ((size_t)(sizeof(x) / sizeof(x[0])))
 #define min(x, y) (x) > (y) ? (y) : (x)
 #define max(x, y) (x) > (y) ? (x) : (y)
+#define IS_OBJ_OP(x) (x == nvme_cmd_obj_write || x == nvme_cmd_obj_read || x == nvme_cmd_obj_list || x == nvme_cmd_obj_delete)
+#define OBJ_REALLOC(x) (x == nvme_cmd_obj_read || x == nvme_cmd_obj_list)
+#define DEFAULT_BUF_SIZE 1024
 
 static int fd;
 static struct stat nvme_stat;
@@ -2149,6 +2152,58 @@ static int resv_report(int argc, char **argv, struct command *cmd, struct plugin
 	return 0;
 }
 
+static int handle_obj_op(int argc, char **argv, int opcode, void *cfg, char* name)
+{
+	struct stat statbuf;
+	struct config {
+		__u64 start_block;
+		__u16 block_count;
+		__u64 data_size;
+		__u64 metadata_size;
+		__u32 ref_tag;
+		char  *data;
+		char  *metadata;
+		__u8  prinfo;
+		__u8  app_tag_mask;
+		__u32 app_tag;
+		int   limited_retry;
+		int   force_unit_access;
+		int   show;
+		int   dry_run;
+		int   latency;
+	};
+	struct config *ptr = (struct config*) cfg;
+
+	if ((argc < 3 && opcode != nvme_cmd_obj_list) || (argc < 2 && opcode == nvme_cmd_obj_list)) /*  unexpected number of arguments */
+	{
+		fprintf(stderr, "Invalid arguments, object command usage: nvme <command> <device> <filename>\n");
+		return EINVAL;
+	}
+	switch(opcode)
+	{
+		case nvme_cmd_obj_write:
+			if(!stat(ptr->data, &statbuf))
+				ptr->data_size = statbuf.st_size;
+			else
+			{
+				fprintf(stderr, "Could not check for file size\n");
+				return errno;
+			}
+			strncpy(name, argv[2], 64);
+			break;
+		case nvme_cmd_obj_read:
+			strncpy(name, argv[2], 64);
+		case nvme_cmd_obj_list:
+			ptr->data_size = DEFAULT_BUF_SIZE;
+			break;
+		case nvme_cmd_obj_delete:
+			ptr->data_size = 0;
+			break;
+	}
+	return 0;
+}
+
+
 static int submit_io(int opcode, char *command, const char *desc,
 		     int argc, char **argv)
 {
@@ -2178,6 +2233,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 	const char *force = "force device to commit data before command completes";
 	const char *show = "show command before sending";
 	const char *dry = "show command instead of sending";
+	char name[64] = {0};
 
 	struct config {
 		__u64 start_block;
@@ -2228,9 +2284,9 @@ static int submit_io(int opcode, char *command, const char *desc,
 		{"latency",           't', "",     CFG_NONE,        &cfg.latency,           no_argument,       latency},
 		{0}
 	};
-
 	parse_and_open(argc, argv, desc, command_line_options, &cfg, sizeof(cfg));
-
+	if (IS_OBJ_OP(opcode))
+		handle_obj_op(argc, argv, opcode, &cfg, name);
 	dfd = mfd = opcode & 1 ? STDIN_FILENO : STDOUT_FILENO;
 	if (cfg.prinfo > 0xf)
 		return EINVAL;
@@ -2254,15 +2310,13 @@ static int submit_io(int opcode, char *command, const char *desc,
 			return EINVAL;
 		}
 	}
-
-	if (!cfg.data_size)	{
+	if (opcode != nvme_cmd_obj_delete && !cfg.data_size)	{
 		fprintf(stderr, "data size not provided\n");
 		return EINVAL;
 	}
-
+	
 	if (ioctl(fd, BLKPBSZGET, &phys_sector_size) < 0)
 		return errno;
-
 	buffer_size = (cfg.block_count + 1) * phys_sector_size;
 	if (cfg.data_size < buffer_size) {
 		fprintf(stderr, "Rounding data size to fit block count (%lld bytes)\n",
@@ -2270,11 +2324,10 @@ static int submit_io(int opcode, char *command, const char *desc,
 	} else {
 		buffer_size = cfg.data_size;
 	}
-
-	if (posix_memalign(&buffer, getpagesize(), buffer_size))
+	if (opcode != nvme_cmd_obj_delete && posix_memalign(&buffer, getpagesize(), buffer_size))
 		return ENOMEM;
-	memset(buffer, 0, cfg.data_size);
-
+	if (opcode != nvme_cmd_obj_delete)
+		memset(buffer, 0, buffer_size);
 	if (cfg.metadata_size) {
 		mbuffer = malloc(cfg.metadata_size);
 		if (!mbuffer) {
@@ -2288,14 +2341,12 @@ static int submit_io(int opcode, char *command, const char *desc,
 		err = EINVAL;
 		goto free_and_return;
 	}
-
 	if (((opcode & 1) || (opcode & 2)) && cfg.metadata_size &&
 				read(mfd, (void *)mbuffer, cfg.metadata_size) < 0) {
 		fprintf(stderr, "failed to read meta-data buffer from input file\n");
 		err = EINVAL;
 		goto free_and_return;
 	}
-
 	if (cfg.show) {
 		printf("opcode       : %02x\n", opcode);
 		printf("flags        : %02x\n", 0);
@@ -2312,10 +2363,19 @@ static int submit_io(int opcode, char *command, const char *desc,
 		if (cfg.dry_run)
 			goto free_and_return;
 	}
-
 	gettimeofday(&start_time, NULL);
-	err = nvme_io(fd, opcode, cfg.start_block, cfg.block_count, control, 0,
+	fprintf(stderr, "before if statement truth:%d and opcode:%d\n",IS_OBJ_OP(opcode), opcode);
+	if(!IS_OBJ_OP(opcode))
+		err = nvme_io(fd, opcode, cfg.start_block, cfg.block_count, control, 0,
 			cfg.ref_tag, cfg.app_tag, cfg.app_tag_mask, buffer, mbuffer, cfg.metadata_size);
+	else
+	{
+		err = nvme_obj_io(fd, opcode - nvme_cmd_obj_write + 1, buffer_size, &buffer, OBJ_REALLOC(opcode), (__u8*)name);
+		if(err)
+		{
+			goto free_and_return;
+		}
+	}
 	gettimeofday(&end_time, NULL);
 	if (cfg.latency)
 		printf(" latency: %s: %llu us\n",
@@ -2670,6 +2730,30 @@ void register_extension(struct plugin *plugin)
 
 	nvme.extensions->tail->next = plugin;
 	nvme.extensions->tail = plugin;
+}
+
+static int object_write(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Copy given file into nvme object store";
+	return submit_io(nvme_cmd_obj_write, "objw", desc, argc, argv);
+}
+
+static int object_read(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Read given file from nvme object store";
+	return submit_io(nvme_cmd_obj_read, "objr", desc, argc, argv);
+}
+
+static int object_list(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "List all files saved in nvme object store";
+	return submit_io(nvme_cmd_obj_list, "objl", desc, argc, argv);
+}
+
+static int object_delete(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Delete file from nvme object store";
+	return submit_io(nvme_cmd_obj_delete, "objd", desc, argc, argv);
 }
 
 int main(int argc, char **argv)
