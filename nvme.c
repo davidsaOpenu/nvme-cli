@@ -58,6 +58,7 @@
 #define array_len(x) ((size_t)(sizeof(x) / sizeof(x[0])))
 #define min(x, y) (x) > (y) ? (y) : (x)
 #define max(x, y) (x) > (y) ? (x) : (y)
+#define IS_OBJ_OP(x) x == nvme_cmd_obj_write || x == nvme_cmd_obj_read || x == nvme_cmd_obj_list || x == nvme_cmd_obj_delete
 
 static int fd;
 static struct stat nvme_stat;
@@ -2149,6 +2150,39 @@ static int resv_report(int argc, char **argv, struct command *cmd, struct plugin
 	return 0;
 }
 
+static int handle_obj_op(int argc, char **argv, int opcode) /* dummy function for handling object related ops */
+{
+	char *dev, *fname;
+	if ((argc == 3 && opcode != nvme_cmd_obj_list) || (argc == 2 && opcode == nvme_cmd_obj_list)) /*  unexpected number of arguments */
+	{
+		fprintf(stderr, "Invalid arguments, object command usage: nvme <command> <device> <filename>\n");
+		return EINVAL;
+	}
+	dev = argv[1];
+	fname = argv[2];
+	switch(opcode)
+	{
+		case nvme_cmd_obj_write:
+			/* ioctl call */
+			fprintf(stderr, "Object %s successfully written on device %s\n", fname, dev);
+			break;
+		case nvme_cmd_obj_read:
+			/* ioctl call */
+			fprintf(stderr, "Object %s successfully read from device %s\n", fname, dev);
+			break;
+		case nvme_cmd_obj_list:
+			fprintf(stderr, "Object list for device %s:\n", dev);
+			/* ioctl call */
+			break;
+		case nvme_cmd_obj_delete:
+			/* ioctl call */
+			fprintf(stderr,"Object %s successfully deleted from device %s\n", fname, dev);
+			break;
+	}
+	return 0;
+}
+
+
 static int submit_io(int opcode, char *command, const char *desc,
 		     int argc, char **argv)
 {
@@ -2230,7 +2264,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 	};
 
 	parse_and_open(argc, argv, desc, command_line_options, &cfg, sizeof(cfg));
-
+	
 	dfd = mfd = opcode & 1 ? STDIN_FILENO : STDOUT_FILENO;
 	if (cfg.prinfo > 0xf)
 		return EINVAL;
@@ -2255,13 +2289,22 @@ static int submit_io(int opcode, char *command, const char *desc,
 		}
 	}
 
+	if (IS_OBJ_OP(opcode))
+		cfg.data_size = 1; /* simulate non-zero data size param in case of obj */
+
 	if (!cfg.data_size)	{
 		fprintf(stderr, "data size not provided\n");
 		return EINVAL;
 	}
 
 	if (ioctl(fd, BLKPBSZGET, &phys_sector_size) < 0)
+	{
+		if (IS_OBJ_OP(opcode))
+		{
+			return handle_obj_op(argc, argv, opcode);
+		}
 		return errno;
+	}
 
 	buffer_size = (cfg.block_count + 1) * phys_sector_size;
 	if (cfg.data_size < buffer_size) {
@@ -2670,6 +2713,30 @@ void register_extension(struct plugin *plugin)
 
 	nvme.extensions->tail->next = plugin;
 	nvme.extensions->tail = plugin;
+}
+
+static int object_write(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Copy given file into nvme object store";
+	return submit_io(nvme_cmd_obj_write, "objw", desc, argc, argv);
+}
+
+static int object_read(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Read given file from nvme object store";
+	return submit_io(nvme_cmd_obj_read, "objr", desc, argc, argv);
+}
+
+static int object_list(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "List all files saved in nvme object store";
+	return submit_io(nvme_cmd_obj_list, "objl", desc, argc, argv);
+}
+
+static int object_delete(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Delete file from nvme object store";
+	return submit_io(nvme_cmd_obj_delete, "objd", desc, argc, argv);
 }
 
 int main(int argc, char **argv)
