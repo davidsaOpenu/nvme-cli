@@ -59,6 +59,7 @@
 #define min(x, y) (x) > (y) ? (y) : (x)
 #define max(x, y) (x) > (y) ? (x) : (y)
 
+
 static int fd;
 static struct stat nvme_stat;
 const char *devicename;
@@ -2149,6 +2150,79 @@ static int resv_report(int argc, char **argv, struct command *cmd, struct plugin
 	return 0;
 }
 
+static int handle_obj_op(int argc, char **argv, int opcode, void *io, char* name)
+{
+	struct stat statbuf;
+	int err = 0;
+	struct nvme_user_obj_io *ptr = (struct nvme_user_obj_io*) io;
+	ptr->opcode = opcode;
+	ptr->offset = 0;
+	switch(opcode) {
+		case nvme_kv_store:
+			strncpy(name, argv[argc-1], NVME_OBJ_ID_MAXLEN + 1);
+			strncpy((char*)ptr->key, name, NVME_OBJ_ID_MAXLEN);
+			if (!(err = stat(name, &statbuf)))
+				ptr->length = statbuf.st_size;
+			else
+			{
+				fprintf(stderr, "Could not check for file size\n");
+				return errno;
+			}
+			break;
+		case nvme_kv_retrieve:
+			ptr->length = 1;    /* setting to non-zero value auto adjusts to physical block size */
+			strncpy(name, argv[argc-1], NVME_OBJ_ID_MAXLEN + 1);
+			strncpy((char*)ptr->key, name, NVME_OBJ_ID_MAXLEN);
+			break;
+		case nvme_kv_delete:
+			strncpy(name, argv[argc-1], NVME_OBJ_ID_MAXLEN + 1);
+			strncpy((char*)ptr->key, name, NVME_OBJ_ID_MAXLEN);
+			ptr->length = 0;
+			break;
+		case nvme_kv_list:
+			ptr->length = 1;    /* setting to non-zero value auto adjusts physical block size */
+	}
+	return 0;
+}
+
+#define NEXT_KEY(key,key_len) ((((__u64)key + key_len + 3) / 4) * 4)
+
+static int obj_read_parse_list(int fd, int dfd, void *io, __u32 *length, void **buffer)
+{
+	int err = 0;
+	char* ptr, last_key_ptr = NULL;
+	struct nvme_user_obj_io* io_ptr = (struct nvme_user_obj_io*)io;
+	__u32 buffer_size = *length;
+	FILE *out = fdopen(dfd,"a+");
+	__u16 last_key_len = 0;
+	if (!out)
+		return -errno;
+	do {
+		__u32 i, count = 0;
+		__u16 key_len = 0;
+		*length = buffer_size;
+		strncpy(io_ptr->key, last_key_ptr, last_key_len); /* put last key read into io - the next list will begin with this key */
+		if (err = nvme_obj_io(fd, io, length, buffer))
+			return err;
+		ptr = (char*)*buffer;
+		count = *(__u32*)ptr;
+		fprintf(stderr,"count is %u\n",(unsigned int) count);
+		ptr += 4;
+		for(i = 0; i < count && err >= 0; i++) { /* parse kv list format */
+			key_len = *(__u16*)ptr;
+			ptr += sizeof(key_len);
+			err += fprintf(out, "%.*s\n", key_len, ptr);
+			fprintf(stderr, "%.*s\n", key_len, ptr);
+			last_key_ptr = ptr;
+			ptr = (char*)NEXT_KEY(ptr,key_len); /* We add the length of the key and padding - key object must be aligned to a 4 byte boundary */
+		}
+		last_key_len = key_len;
+	} while (count > 1 && err >= 0); /* We should always use a buffer that can fit at least 2 key objects */
+	fclose(out);
+	return err;
+}
+
+
 static int submit_io(int opcode, char *command, const char *desc,
 		     int argc, char **argv)
 {
@@ -2239,7 +2313,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 		control |= NVME_RW_LR;
 	if (cfg.force_unit_access)
 		control |= NVME_RW_FUA;
-	if (strlen(cfg.data)){
+	if (strlen(cfg.data)) {
 		dfd = open(cfg.data, flags, mode);
 		if (dfd < 0) {
 			perror(cfg.data);
@@ -2247,7 +2321,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 		}
 		mfd = dfd;
 	}
-	if (strlen(cfg.metadata)){
+	if (strlen(cfg.metadata)) {
 		mfd = open(cfg.metadata, metaflags, mode);
 		if (mfd < 0) {
 			perror(cfg.data);
@@ -2262,7 +2336,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 
 	if (ioctl(fd, BLKPBSZGET, &phys_sector_size) < 0)
 		return errno;
-
+	
 	buffer_size = (cfg.block_count + 1) * phys_sector_size;
 	if (cfg.data_size < buffer_size) {
 		fprintf(stderr, "Rounding data size to fit block count (%lld bytes)\n",
@@ -2341,6 +2415,112 @@ static int submit_io(int opcode, char *command, const char *desc,
 	free(buffer);
 	if (cfg.metadata_size)
 		free(mbuffer);
+	return err;
+}
+
+static int submit_obj_io(int opcode, char *command, const char *desc,
+		     int argc, char **argv)
+{
+	struct timeval start_time, end_time;
+	void *buffer = NULL;
+	int err = 0;
+	int dfd = 0;
+	int flags = opcode & 1 ? O_RDONLY : O_WRONLY | O_CREAT;
+	int mode = S_IRUSR | S_IWUSR |S_IRGRP | S_IWGRP| S_IROTH;
+	int phys_sector_size = 0;
+	__u32 buffer_size = 0;
+	__u32 length = 0;
+	char name[NVME_OBJ_ID_MAXLEN + 1] = {0};
+	
+	const char *latency = "output latency statistics";
+	const char *show = "show command before sending";
+	const char *dry = "show command instead of sending";
+
+	struct config {
+		int   show;
+		int   dry_run;
+		int   latency;
+	};
+
+	struct config cfg = {0};
+	
+	struct nvme_user_obj_io io = {0};
+	
+	const struct argconfig_commandline_options command_line_options[] = {
+		{"show-command",      'v', "",     CFG_NONE,        &cfg.show,              no_argument,       show},
+		{"dry-run",           'w', "",     CFG_NONE,        &cfg.dry_run,           no_argument,       dry},
+		{"latency",           't', "",     CFG_NONE,        &cfg.latency,           no_argument,       latency},
+		{0}
+	};
+	if (opcode != nvme_kv_list)
+		parse_and_open(argc, argv, desc, command_line_options, &cfg, sizeof(cfg));
+	else
+		get_dev(argc, argv);
+	if((err = handle_obj_op(argc, argv, opcode, &io, name))) {
+		perror("handle-obj-op");
+		return err;
+	}
+	if (strlen(name))
+		dfd = open(name, flags, mode);
+	if (!dfd)
+		dfd = opcode & 1 ? STDIN_FILENO : STDOUT_FILENO;
+	else if (dfd < 0) {
+		perror(name);
+		return EINVAL;
+	}
+	if (ioctl(fd, BLKPBSZGET, &phys_sector_size) < 0)
+		return errno;
+	if (io.length%phys_sector_size)
+		buffer_size = (io.length/phys_sector_size + 1) * phys_sector_size;
+	else
+		buffer_size = io.length;
+	if (io.length && 
+		posix_memalign(&buffer, getpagesize(), buffer_size))
+		return ENOMEM;
+
+	if ((opcode & 1) && io.length && read(dfd, (void *)buffer, io.length) < 0) {
+		fprintf(stderr, "failed to read data buffer from input file\n");
+		err = EINVAL;
+		goto free_and_return;
+	}
+	
+	if (cfg.show) {
+		printf("opcode       : %02x\n", opcode);
+		printf("addr         : %"PRIx64"\n", (uint64_t)(uintptr_t)buffer);
+		if (cfg.dry_run)
+			goto free_and_return;
+	}
+	gettimeofday(&start_time, NULL);
+	if (opcode == nvme_kv_retrieve) {
+		while (!err && buffer_size) {
+			length = buffer_size;
+			err = nvme_obj_io(fd, &io, &length, &buffer);
+			if (write(fd, buffer, buffer_size); < 0) {
+				fprintf(stderr, "failed to write buffer to output file %d\n",dfd);
+				err = EINVAL;
+				goto free_and_return;
+			}
+			io.offset += length;
+			if (length < buffer_size) break;
+		}
+	}
+	else if (opcode == nvme_kv_list)
+	{
+		err = obj_read_parse_list(fd, dfd, &io, &length, &buffer);
+	}
+	else
+		err = nvme_obj_io(fd, &io, &buffer_size, &buffer);
+	
+	gettimeofday(&end_time, NULL);
+	if (cfg.latency)
+		printf(" latency: %s: %llu us\n",
+			command, elapsed_utime(start_time, end_time));
+	if (err < 0)
+		perror("submit-obj-io");
+	else if (err)
+		printf("%s:%s(%04x)\n", command, nvme_status_to_string(err), err);
+ free_and_return:
+	free(buffer);
 	return err;
 }
 
@@ -2670,6 +2850,30 @@ void register_extension(struct plugin *plugin)
 
 	nvme.extensions->tail->next = plugin;
 	nvme.extensions->tail = plugin;
+}
+
+static int object_write(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Copy given file into nvme object store";
+	return submit_obj_io(nvme_kv_store, "objw", desc, argc, argv);
+}
+
+static int object_read(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Read given file from nvme object store";
+	return submit_obj_io(nvme_kv_retrieve, "objr", desc, argc, argv);
+}
+
+static int object_list(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "List all files saved in nvme object store";
+	return submit_obj_io(nvme_kv_list, "objl", desc, argc, argv);
+}
+
+static int object_delete(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Delete file from nvme object store";
+	return submit_obj_io(nvme_kv_delete, "objd", desc, argc, argv);
 }
 
 int main(int argc, char **argv)
