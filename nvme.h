@@ -377,6 +377,13 @@ enum nvme_opcode {
 	nvme_cmd_resv_release	= 0x15,
 };
 
+enum nvme_kv_opcode {
+	nvme_kv_store     = 0x01,
+	nvme_kv_retrieve  = 0x02,
+	nvme_kv_list	  = 0x06,
+	nvme_kv_delete	  = 0x10,
+};
+
 enum {
 	NVME_RW_LR			= 1 << 15,
 	NVME_RW_FUA			= 1 << 14,
