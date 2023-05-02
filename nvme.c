@@ -59,6 +59,7 @@
 #define min(x, y) (x) > (y) ? (y) : (x)
 #define max(x, y) (x) > (y) ? (x) : (y)
 
+
 static int fd;
 static struct stat nvme_stat;
 const char *devicename;
@@ -2149,6 +2150,75 @@ static int resv_report(int argc, char **argv, struct command *cmd, struct plugin
 	return 0;
 }
 
+static int handle_obj_op(int argc, char **argv, int opcode, void *cfg, char *name)
+{
+	struct stat statbuf;
+	int err = 0;
+	struct config {
+		__u64 offset;
+		__u64 data_size;
+		__u32 ref_tag;
+		char  *data;
+		__u8  prinfo;
+		__u8  app_tag_mask;
+		__u32 app_tag;
+		int   limited_retry;
+		int   force_unit_access;
+		int   show;
+		int   dry_run;
+		int   latency;
+	};
+	struct config *ptr = (struct config*) cfg;
+	switch(opcode) {
+		case nvme_cmd_obj_write:
+			strncpy(name, argv[argc-1], NVME_OBJ_ID_MAXLEN);
+			if (!strlen(ptr->data))
+				ptr->data = name;
+			if (!(err = stat(ptr->data, &statbuf)))
+				ptr->data_size = statbuf.st_size;
+			else
+			{
+				fprintf(stderr, "Could not check for file size\n");
+				return errno;
+			}
+			break;
+		case nvme_cmd_obj_read:
+			ptr->data_size = 1;    /* setting to non-zero value auto adjusts to physical block size */
+			strncpy(name, argv[argc-1], NVME_OBJ_ID_MAXLEN);
+			if (!strlen(ptr->data))
+				ptr->data = name;
+			break;
+		case nvme_cmd_obj_delete:
+			strncpy(name, argv[argc-1], NVME_OBJ_ID_MAXLEN);
+			ptr->data_size = 0;
+			break;
+		case nvme_cmd_obj_list:
+			ptr->data_size = 1;    /* setting to non-zero value auto adjusts to physical block size */
+	}
+	return 0;
+}
+
+static int obj_write_back(int fd, void *buffer, __u64 buffer_size, int opcode)
+{
+	if (opcode == nvme_cmd_obj_list) {
+		int err = 0, i = 0;
+		size_t size = sizeof(struct nvme_user_obj_dirent);
+		size_t entry_count = buffer_size / size;
+		struct nvme_user_obj_dirent *ent_arr = (struct nvme_user_obj_dirent*)buffer;
+		FILE *out = fdopen(fd,"a+");    /* a+ is used since a is illegal for stdout */
+		if (!out)
+			return errno;
+		for(; i < entry_count && err >= 0; i++) {
+			err += fprintf(out, "%.64s"  , (char*)ent_arr[i].obj_id);
+			err += fprintf(out, " %" PRIu64 "\n", (uint64_t)ent_arr[i].obj_len);
+		}
+		return err;
+	}
+	else
+		return write(fd, buffer, buffer_size);
+}
+
+
 static int submit_io(int opcode, char *command, const char *desc,
 		     int argc, char **argv)
 {
@@ -2239,7 +2309,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 		control |= NVME_RW_LR;
 	if (cfg.force_unit_access)
 		control |= NVME_RW_FUA;
-	if (strlen(cfg.data)){
+	if (strlen(cfg.data)) {
 		dfd = open(cfg.data, flags, mode);
 		if (dfd < 0) {
 			perror(cfg.data);
@@ -2247,7 +2317,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 		}
 		mfd = dfd;
 	}
-	if (strlen(cfg.metadata)){
+	if (strlen(cfg.metadata)) {
 		mfd = open(cfg.metadata, metaflags, mode);
 		if (mfd < 0) {
 			perror(cfg.data);
@@ -2262,7 +2332,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 
 	if (ioctl(fd, BLKPBSZGET, &phys_sector_size) < 0)
 		return errno;
-
+	
 	buffer_size = (cfg.block_count + 1) * phys_sector_size;
 	if (cfg.data_size < buffer_size) {
 		fprintf(stderr, "Rounding data size to fit block count (%lld bytes)\n",
@@ -2341,6 +2411,153 @@ static int submit_io(int opcode, char *command, const char *desc,
 	free(buffer);
 	if (cfg.metadata_size)
 		free(mbuffer);
+	return err;
+}
+
+static int submit_obj_io(int opcode, char *command, const char *desc,
+		     int argc, char **argv)
+{
+	struct timeval start_time, end_time;
+	void *buffer = NULL;
+	int err = 0;
+	int dfd = 0;
+	int flags = opcode & 1 ? O_RDONLY : O_WRONLY | O_CREAT;
+	int mode = S_IRUSR | S_IWUSR |S_IRGRP | S_IWGRP| S_IROTH;
+	__u16 control = 0;
+	int phys_sector_size = 0;
+	__u64 buffer_size = 0;
+	__u64 length = 0;
+	char name[NVME_OBJ_ID_MAXLEN] = {0};
+	size_t ent_size = sizeof(struct nvme_user_obj_dirent);
+	
+	const char *offset = "64-bit offset to access within the object";
+	const char *data_size = "size of data in bytes";
+	const char *ref_tag = "reference tag (for end to end PI)";
+	const char *data = "data file";
+	const char *prinfo = "PI and check field";
+	const char *app_tag_mask = "app tag mask (for end to end PI)";
+	const char *app_tag = "app tag (for end to end PI)";
+	const char *limited_retry = "limit num. media access attempts";
+	const char *latency = "output latency statistics";
+	const char *force = "force device to commit data before command completes";
+	const char *show = "show command before sending";
+	const char *dry = "show command instead of sending";
+
+	struct config {
+		__u64 offset;
+		__u64 data_size;
+		__u32 ref_tag;
+		char  *data;
+		__u8  prinfo;
+		__u8  app_tag_mask;
+		__u32 app_tag;
+		int   limited_retry;
+		int   force_unit_access;
+		int   show;
+		int   dry_run;
+		int   latency;
+	};
+
+	struct config cfg = {
+		.offset	 	 = 0,
+		.data_size       = 0,
+		.ref_tag         = 0,
+		.data            = "",
+		.prinfo          = 0,
+		.app_tag_mask    = 0,
+		.app_tag         = 0,
+	};
+
+	const struct argconfig_commandline_options command_line_options[] = {
+		{"start-block",       's', "NUM",  CFG_LONG_SUFFIX, &cfg.offset,       required_argument, offset},
+		{"data-size",         'z', "NUM",  CFG_LONG_SUFFIX, &cfg.data_size,         required_argument, data_size},
+		{"ref-tag",           'r', "NUM",  CFG_POSITIVE,    &cfg.ref_tag,           required_argument, ref_tag},
+		{"data",              'd', "FILE", CFG_STRING,      &cfg.data,              required_argument, data},
+		{"prinfo",            'p', "NUM",  CFG_BYTE,        &cfg.prinfo,            required_argument, prinfo},
+		{"app-tag-mask",      'm', "NUM",  CFG_BYTE,        &cfg.app_tag_mask,      required_argument, app_tag_mask},
+		{"app-tag",           'a', "NUM",  CFG_POSITIVE,    &cfg.app_tag,           required_argument, app_tag},
+		{"limited-retry",     'l', "",     CFG_NONE,        &cfg.limited_retry,     no_argument,       limited_retry},
+		{"force-unit-access", 'f', "",     CFG_NONE,        &cfg.force_unit_access, no_argument,       force},
+		{"show-command",      'v', "",     CFG_NONE,        &cfg.show,              no_argument,       show},
+		{"dry-run",           'w', "",     CFG_NONE,        &cfg.dry_run,           no_argument,       dry},
+		{"latency",           't', "",     CFG_NONE,        &cfg.latency,           no_argument,       latency},
+		{0}
+	};
+	
+	parse_and_open(argc, argv, desc, command_line_options, &cfg, sizeof(cfg));
+	if((err = handle_obj_op(argc, argv, opcode, &cfg, name))) {
+		perror("handle-obj-op");
+		return err;
+	}
+	if (cfg.prinfo > 0xf)
+		return EINVAL;
+	control |= (cfg.prinfo << 10);
+	if (cfg.limited_retry)
+		control |= NVME_RW_LR;
+	if (cfg.force_unit_access)
+		control |= NVME_RW_FUA;
+	if (strlen(cfg.data))
+		dfd = open(cfg.data, flags, mode);
+	if (!dfd)
+		dfd = opcode & 1 ? STDIN_FILENO : STDOUT_FILENO;
+	else if (dfd < 0) {
+		perror(cfg.data);
+		return EINVAL;
+	}
+	if (ioctl(fd, BLKPBSZGET, &phys_sector_size) < 0)
+		return errno;
+	if (cfg.data_size%phys_sector_size)
+		buffer_size = (cfg.data_size/phys_sector_size + 1) * phys_sector_size;
+	else
+		buffer_size = cfg.data_size;
+	if (opcode == nvme_cmd_obj_list && buffer_size%ent_size)
+		buffer_size = (buffer_size/ent_size + 1) * ent_size;    /* if list align buffer to ent size */
+	if (cfg.data_size && 
+		posix_memalign(&buffer, getpagesize(), buffer_size))
+		return ENOMEM;
+
+	if ((opcode & 1) && cfg.data_size && read(dfd, (void *)buffer, cfg.data_size) < 0) {
+		fprintf(stderr, "failed to read data buffer from input file\n");
+		err = EINVAL;
+		goto free_and_return;
+	}
+	
+	if (cfg.show) {
+		printf("opcode       : %02x\n", opcode);
+		printf("flags        : %02x\n", 0);
+		printf("control      : %04x\n", control);
+		printf("addr         : %"PRIx64"\n", (uint64_t)(uintptr_t)buffer);
+		printf("dsmgmt       : %08x\n", 0);
+		printf("reftag       : %08x\n", cfg.ref_tag);
+		printf("apptag       : %04x\n", cfg.app_tag);
+		printf("appmask      : %04x\n", cfg.app_tag_mask);
+		if (cfg.dry_run)
+			goto free_and_return;
+	}
+	gettimeofday(&start_time, NULL);
+	while (!(opcode & 1) && !err && buffer_size) {
+		length = buffer_size;
+		err = nvme_obj_io(fd, opcode, cfg.offset, &length, &buffer, (__u8*)name);
+		if (obj_write_back(dfd, (void *)buffer, length, opcode) < 0) {
+			fprintf(stderr, "failed to write buffer to output file %d\n",dfd);
+			err = EINVAL;
+			goto free_and_return;
+		}
+		cfg.offset += length;
+		if (length < buffer_size) break; /* read last chunk */
+	}
+	if (opcode & 1)
+		err = nvme_obj_io(fd, opcode, cfg.offset, &buffer_size, &buffer, (__u8*)name);
+	gettimeofday(&end_time, NULL);
+	if (cfg.latency)
+		printf(" latency: %s: %llu us\n",
+			command, elapsed_utime(start_time, end_time));
+	if (err < 0)
+		perror("submit-obj-io");
+	else if (err)
+		printf("%s:%s(%04x)\n", command, nvme_status_to_string(err), err);
+ free_and_return:
+	free(buffer);
 	return err;
 }
 
@@ -2670,6 +2887,30 @@ void register_extension(struct plugin *plugin)
 
 	nvme.extensions->tail->next = plugin;
 	nvme.extensions->tail = plugin;
+}
+
+static int object_write(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Copy given file into nvme object store";
+	return submit_obj_io(nvme_cmd_obj_write, "objw", desc, argc, argv);
+}
+
+static int object_read(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Read given file from nvme object store";
+	return submit_obj_io(nvme_cmd_obj_read, "objr", desc, argc, argv);
+}
+
+static int object_list(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "List all files saved in nvme object store";
+	return submit_obj_io(nvme_cmd_obj_list, "objl", desc, argc, argv);
+}
+
+static int object_delete(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Delete file from nvme object store";
+	return submit_obj_io(nvme_cmd_obj_delete, "objd", desc, argc, argv);
 }
 
 int main(int argc, char **argv)
