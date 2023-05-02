@@ -2261,7 +2261,11 @@ static int submit_io(int opcode, char *command, const char *desc,
 	}
 
 	if (ioctl(fd, BLKPBSZGET, &phys_sector_size) < 0)
+	{
+		if (opcode == nvme_cmd_obj_write || opcode == nvme_cmd_obj_read || opcode == nvme_cmd_obj_list || opcode == nvme_cmd_obj_delete)
+			fprintf(stderr, "Object commands have not been implemented yet\n");
 		return errno;
+	}
 
 	buffer_size = (cfg.block_count + 1) * phys_sector_size;
 	if (cfg.data_size < buffer_size) {
@@ -2671,6 +2675,32 @@ void register_extension(struct plugin *plugin)
 	nvme.extensions->tail->next = plugin;
 	nvme.extensions->tail = plugin;
 }
+
+static int object_write(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Copy given file into nvme object store";
+	return submit_io(nvme_cmd_obj_write, "objw", desc, argc, argv);
+}
+
+static int object_read(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Read given file from nvme object store";
+	return submit_io(nvme_cmd_obj_read, "objr", desc, argc, argv);
+}
+
+static int object_list(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "List all files saved in nvme object store";
+	return submit_io(nvme_cmd_obj_list, "objl", desc, argc, argv);
+}
+
+static int object_delete(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Delete file from nvme object store";
+	return submit_io(nvme_cmd_obj_delete, "objd", desc, argc, argv);
+}
+
+
 
 int main(int argc, char **argv)
 {
