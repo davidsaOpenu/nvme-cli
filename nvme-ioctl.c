@@ -135,6 +135,28 @@ int nvme_io(int fd, __u8 opcode, __u64 slba, __u16 nblocks, __u16 control,
 	return ioctl(fd, NVME_IOCTL_SUBMIT_IO, &io);
 }
 
+int nvme_obj_io(int fd, __u8 opcode, __u64 start_block, __u32 data_size, void **data, __u8 realloc, __u8 *obj_id)
+{
+	int err;
+	struct nvme_user_obj_io io = {
+		.opcode 	= opcode,
+		.length 	= data_size,
+		.start_block	= start_block,
+		.addr   	= (__u64)(uintptr_t) (*data),
+	};
+	strncpy((char*)(io.obj_id), (char*)obj_id, 64);
+	if(-EAGAIN == (err = ioctl(fd, NVME_IOCTL_SUBMIT_OBJ_IO, &io)))
+	{
+		if (realloc) /* increase buffer size to fit object */
+		{
+			free(*data);
+			if((err = posix_memalign(data, getpagesize(), io.length))) return err;
+		}
+		err = ioctl(fd, NVME_IOCTL_SUBMIT_OBJ_IO, &io);
+	}
+	return err;
+}
+
 int nvme_read(int fd, __u64 slba, __u16 nblocks, __u16 control, __u32 dsmgmt,
 	      __u32 reftag, __u16 apptag, __u16 appmask, void *data,
 	      void *metadata)
