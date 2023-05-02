@@ -375,6 +375,10 @@ enum nvme_opcode {
 	nvme_cmd_resv_report	= 0x0e,
 	nvme_cmd_resv_acquire	= 0x11,
 	nvme_cmd_resv_release	= 0x15,
+	nvme_cmd_obj_write	= 0x17,
+	nvme_cmd_obj_read	= 0x18,
+	nvme_cmd_obj_delete	= 0x19,
+	nvme_cmd_obj_list	= 0x1a,
 };
 
 enum {

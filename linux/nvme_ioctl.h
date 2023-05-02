@@ -32,6 +32,13 @@ struct nvme_user_io {
 	__u16	appmask;
 };
 
+struct nvme_user_obj_io {
+	__u8	opcode;
+	__u32	length;
+	__u64	addr;
+	__u8	obj_id[64];
+};
+
 struct nvme_passthru_cmd {
 	__u8	opcode;
 	__u8	flags;
@@ -58,9 +65,10 @@ struct nvme_passthru_cmd {
 #define NVME_IOCTL_ID		_IO('N', 0x40)
 #define NVME_IOCTL_ADMIN_CMD	_IOWR('N', 0x41, struct nvme_admin_cmd)
 #define NVME_IOCTL_SUBMIT_IO	_IOW('N', 0x42, struct nvme_user_io)
-#define NVME_IOCTL_IO_CMD	_IOWR('N', 0x43, struct nvme_passthru_cmd)
+#define NVME_IOCTL_OBJ_SUBMIT_IO	_IOWR('N', 0x43, struct nvme_user_obj_io)
 #define NVME_IOCTL_RESET	_IO('N', 0x44)
 #define NVME_IOCTL_SUBSYS_RESET	_IO('N', 0x45)
 #define NVME_IOCTL_RESCAN	_IO('N', 0x46)
+#define NVME_IOCTL_IO_CMD	_IOWR('N', 0x47, struct nvme_passthru_cmd)
 
 #endif /* _UAPI_LINUX_NVME_IOCTL_H */
