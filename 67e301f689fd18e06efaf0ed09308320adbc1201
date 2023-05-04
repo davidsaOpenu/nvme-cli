@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f427e534_d48bd601",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-05-04T07:50:41Z",
+      "side": 1,
+      "message": "Thanks for submitting the patch. \n\nPlease take a look again of paragraph 3 of https://trello.com/c/brOq3vV9/87-set-up-evssim-env-object-read-write-list-delete-support-in-nvme-cli. \n\n```\nresult retured from the kernel in the “if (ioctl(fd, BLKPBSZGET, \u0026phys_sector_size) \u003c 0)” line (i.e. if submit io was called with object opcodes, just create the resulting command as expected from the kernel).\n```\n\nI.e \na) commands delivered to the ioctl / response received from the ioctl should be coded\n\nb) commands “nvme objw file_name”; “nvme objr file_name”; “nvme objl”; “nvme objd file_name” are not working. They should print a data that was mimicked at the palate it was returned from the ioctl call.",
+      "revId": "67e301f689fd18e06efaf0ed09308320adbc1201",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
