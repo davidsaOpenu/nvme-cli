@@ -1,0 +1,251 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29b62c73_3d7697b5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-12T08:16:44Z",
+      "side": 1,
+      "message": "thanks for working on this  change. Let\u0027s also invoke this code as a part of\nsimulator/eVSSIM/tests/guest/objects_via_ioctl/ by Adding a change to simulator with \"Depends-on: \u003curl of this change\u003e\" in a comment.",
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "91fb6ab1_4cd2aea9",
+        "filename": "linux/nvme_ioctl.h",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-12T08:16:44Z",
+      "side": 1,
+      "message": "maybe  NVME_IOCTL_SUBMIT_OBJ_IO is better",
+      "range": {
+        "startLine": 68,
+        "startChar": 8,
+        "endLine": 68,
+        "endChar": 32
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "521218f4_90341a3f",
+        "filename": "nvme-ioctl.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-12T08:16:44Z",
+      "side": 1,
+      "message": "what is the reason? why not simply return the result of the ioctl and let the user decide?",
+      "range": {
+        "startLine": 140,
+        "startChar": 10,
+        "endLine": 140,
+        "endChar": 15
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7307f6d_f1e236c7",
+        "filename": "nvme-ioctl.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-12T08:16:44Z",
+      "side": 1,
+      "message": "same question here",
+      "range": {
+        "startLine": 149,
+        "startChar": 1,
+        "endLine": 153,
+        "endChar": 3
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a5c26b9_6afba2f8",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-12T08:16:44Z",
+      "side": 1,
+      "message": "style: long line",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 126
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5a530d13_397e60b1",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-12T08:16:44Z",
+      "side": 1,
+      "message": "unless I\u0027m missing something the name seams non related to the logic.",
+      "range": {
+        "startLine": 62,
+        "startChar": 8,
+        "endLine": 62,
+        "endChar": 19
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f621b644_71c510f8",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-12T08:16:44Z",
+      "side": 1,
+      "message": "let\u0027s add a description",
+      "range": {
+        "startLine": 63,
+        "startChar": 8,
+        "endLine": 63,
+        "endChar": 24
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f13e080_e254bb11",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2192,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-12T08:16:44Z",
+      "side": 1,
+      "message": "let\u0027s avoid magic numbers",
+      "range": {
+        "startLine": 2192,
+        "startChar": 26,
+        "endLine": 2192,
+        "endChar": 28
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7efb647f_528233b5",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2195,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-12T08:16:44Z",
+      "side": 1,
+      "message": "and here",
+      "range": {
+        "startLine": 2195,
+        "startChar": 28,
+        "endLine": 2195,
+        "endChar": 29
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1c90b0a1_a58e6a6b",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2197,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-12T08:16:44Z",
+      "side": 1,
+      "message": "why list size is DEFAULT_BUF_SIZE bytes?",
+      "range": {
+        "startLine": 2197,
+        "startChar": 20,
+        "endLine": 2197,
+        "endChar": 36
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8ecea8d3_be70286b",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2207,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-12T08:16:44Z",
+      "side": 1,
+      "message": "are you sure this code will become spaghetti soon? The question is maybe better to handle obj io in a separate (from a block io) method",
+      "range": {
+        "startLine": 2207,
+        "startChar": 11,
+        "endLine": 2207,
+        "endChar": 20
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
