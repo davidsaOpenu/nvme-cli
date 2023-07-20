@@ -41,6 +41,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "28b3fe23_36429f19",
+        "filename": "linux/nvme_ioctl.h",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-07-20T21:16:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "91fb6ab1_4cd2aea9",
+      "range": {
+        "startLine": 68,
+        "startChar": 8,
+        "endLine": 68,
+        "endChar": 32
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "521218f4_90341a3f",
@@ -54,6 +78,30 @@
       "writtenOn": "2023-07-12T08:16:44Z",
       "side": 1,
       "message": "what is the reason? why not simply return the result of the ioctl and let the user decide?",
+      "range": {
+        "startLine": 140,
+        "startChar": 10,
+        "endLine": 140,
+        "endChar": 15
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6047f876_58abd9da",
+        "filename": "nvme-ioctl.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-07-20T21:16:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "521218f4_90341a3f",
       "range": {
         "startLine": 140,
         "startChar": 10,
@@ -87,6 +135,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7cf37c51_0b1945be",
+        "filename": "nvme-ioctl.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-07-20T21:16:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f7307f6d_f1e236c7",
+      "range": {
+        "startLine": 149,
+        "startChar": 1,
+        "endLine": 153,
+        "endChar": 3
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7a5c26b9_6afba2f8",
@@ -100,6 +172,30 @@
       "writtenOn": "2023-07-12T08:16:44Z",
       "side": 1,
       "message": "style: long line",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 126
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bcba5e2f_4779cb39",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-07-20T21:16:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7a5c26b9_6afba2f8",
       "range": {
         "startLine": 61,
         "startChar": 1,
@@ -133,6 +229,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad4c5377_f0107acd",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-07-20T21:16:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a530d13_397e60b1",
+      "range": {
+        "startLine": 62,
+        "startChar": 8,
+        "endLine": 62,
+        "endChar": 19
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f621b644_71c510f8",
@@ -146,6 +266,30 @@
       "writtenOn": "2023-07-12T08:16:44Z",
       "side": 1,
       "message": "let\u0027s add a description",
+      "range": {
+        "startLine": 63,
+        "startChar": 8,
+        "endLine": 63,
+        "endChar": 24
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9022a644_74fd2f19",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-07-20T21:16:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f621b644_71c510f8",
       "range": {
         "startLine": 63,
         "startChar": 8,
@@ -179,6 +323,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f976a5f2_b0bde5a9",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2192,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-07-20T21:16:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f13e080_e254bb11",
+      "range": {
+        "startLine": 2192,
+        "startChar": 26,
+        "endLine": 2192,
+        "endChar": 28
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7efb647f_528233b5",
@@ -192,6 +360,30 @@
       "writtenOn": "2023-07-12T08:16:44Z",
       "side": 1,
       "message": "and here",
+      "range": {
+        "startLine": 2195,
+        "startChar": 28,
+        "endLine": 2195,
+        "endChar": 29
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "21347071_a9335623",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2195,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-07-20T21:16:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7efb647f_528233b5",
       "range": {
         "startLine": 2195,
         "startChar": 28,
@@ -225,6 +417,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c754e41e_ef80a790",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2197,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-07-20T21:16:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1c90b0a1_a58e6a6b",
+      "range": {
+        "startLine": 2197,
+        "startChar": 20,
+        "endLine": 2197,
+        "endChar": 36
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8ecea8d3_be70286b",
@@ -238,6 +454,30 @@
       "writtenOn": "2023-07-12T08:16:44Z",
       "side": 1,
       "message": "are you sure this code will become spaghetti soon? The question is maybe better to handle obj io in a separate (from a block io) method",
+      "range": {
+        "startLine": 2207,
+        "startChar": 11,
+        "endLine": 2207,
+        "endChar": 20
+      },
+      "revId": "9fcd92ca7bef8d108edb7f189607afc525d0a2d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "532eaa8c_e33f113c",
+        "filename": "nvme.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2207,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-07-20T21:16:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ecea8d3_be70286b",
       "range": {
         "startLine": 2207,
         "startChar": 11,
