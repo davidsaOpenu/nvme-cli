@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b90335bd_0d41c235",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-28T14:37:13Z",
+      "side": 1,
+      "message": "\u003c 50",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 72
+      },
+      "revId": "ae7a11c4fc98755b812fe8250022d414617f10d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ecab5a8b_037df283",
+        "filename": "linux/nvme_ioctl.h",
+        "patchSetId": 10
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-28T14:37:13Z",
+      "side": 1,
+      "message": "2 ^ (8 * 64) objects are probably more then enough.  How about making this field __u64 obj_id?",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 33
+      },
+      "revId": "ae7a11c4fc98755b812fe8250022d414617f10d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c0abe096_def071b4",
+        "filename": "nvme-ioctl.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-28T14:37:13Z",
+      "side": 1,
+      "message": "redefinition, but we can get rid of NVME_OBJ_ID_MAXLEN altogether",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 24,
+        "endChar": 29
+      },
+      "revId": "ae7a11c4fc98755b812fe8250022d414617f10d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "634671b2_77d27781",
+        "filename": "nvme.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-28T14:37:13Z",
+      "side": 1,
+      "message": "one more appearance. Let\u0027s remove it",
+      "range": {
+        "startLine": 61,
+        "startChar": 7,
+        "endLine": 61,
+        "endChar": 27
+      },
+      "revId": "ae7a11c4fc98755b812fe8250022d414617f10d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "50c23707_c008a524",
+        "filename": "nvme.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 2181,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-28T14:37:13Z",
+      "side": 1,
+      "message": "better to handle this in a command line parser rather then in nvme.c",
+      "range": {
+        "startLine": 2177,
+        "startChar": 0,
+        "endLine": 2181,
+        "endChar": 4
+      },
+      "revId": "ae7a11c4fc98755b812fe8250022d414617f10d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "37b1adb2_e1547cc3",
+        "filename": "nvme.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 2196,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-28T14:37:13Z",
+      "side": 1,
+      "message": "better to handle this in a command line parser rather then in nvme.c",
+      "range": {
+        "startLine": 2192,
+        "startChar": 0,
+        "endLine": 2196,
+        "endChar": 4
+      },
+      "revId": "ae7a11c4fc98755b812fe8250022d414617f10d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "71edff76_10ff70fb",
+        "filename": "nvme.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 2204,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-28T14:37:13Z",
+      "side": 1,
+      "message": "better to handle this in a command line parser rather then in nvme.c",
+      "range": {
+        "startLine": 2200,
+        "startChar": 0,
+        "endLine": 2204,
+        "endChar": 4
+      },
+      "revId": "ae7a11c4fc98755b812fe8250022d414617f10d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c70fd428_cfe1c2e5",
+        "filename": "nvme.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 2212,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-07-28T14:37:13Z",
+      "side": 1,
+      "message": "better to handle this in a command line parser rather then in nvme.c",
+      "range": {
+        "startLine": 2208,
+        "startChar": 0,
+        "endLine": 2212,
+        "endChar": 4
+      },
+      "revId": "ae7a11c4fc98755b812fe8250022d414617f10d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
