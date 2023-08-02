@@ -16,6 +16,57 @@
       "message": "It is realy confusing the usage of the ptr and the temp buffer.\nYou can just use the struct (defined in ioctl user api)\nstruct nvme_user_obj_dirent {\n\t__u8 \tobj_id[NVME_OBJ_ID_MAXLEN];\n\t__u32\tobj_len;\n};\n\nThen, you can access it as an array:\n\nstruct nvme_user_obj_dirent *dirent \u003d (struct nvme_user_obj_dirent *)buffer;\n// Maybe verify the buffer_size is multiple of dirent\nsize_t entires_count \u003d buffer_size / sizeof(*dirent); \n\nfor (size_t i \u003d 0; i \u003c entries_count; i++) {\n    fprintf(fd, \" [-] %.64s - %d\\n\", dirent[i].obj_id, dirent[i].obj_len);\n}",
       "revId": "3dc6391b6f871b74a531f88d4c470d10240ffa18",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "000ebceb_80b673a2",
+        "filename": "nvme.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 2482,
+      "author": {
+        "id": 1020962
+      },
+      "writtenOn": "2023-08-02T16:34:24Z",
+      "side": 1,
+      "message": "data-size is needed?",
+      "revId": "3dc6391b6f871b74a531f88d4c470d10240ffa18",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "57effbf2_3207a40c",
+        "filename": "nvme.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 2524,
+      "author": {
+        "id": 1020962
+      },
+      "writtenOn": "2023-08-02T16:34:24Z",
+      "side": 1,
+      "message": "Shouldn\u0027t ew read only if the opcode is write? (delete \u0026 1 \u003d 1)",
+      "revId": "3dc6391b6f871b74a531f88d4c470d10240ffa18",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c1daee10_e0dd663f",
+        "filename": "nvme.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 2544,
+      "author": {
+        "id": 1020962
+      },
+      "writtenOn": "2023-08-02T16:34:24Z",
+      "side": 1,
+      "message": "On list dir, the length should be aligned to sizeof(nvme_user_obj_dirent) (which is currently 64+4\u003d68)",
+      "revId": "3dc6391b6f871b74a531f88d4c470d10240ffa18",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
