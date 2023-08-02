@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "779e6460_eb5d77fc",
+        "filename": "nvme.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 2214,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-08-02T16:53:21Z",
+      "side": 1,
+      "message": "Didn\u0027t change this part back from initial switch to u64 as ID, will fix.",
+      "parentUuid": "e3bf764c_a4d4a9f9",
+      "revId": "3dc6391b6f871b74a531f88d4c470d10240ffa18",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "000ebceb_80b673a2",
         "filename": "nvme.c",
         "patchSetId": 11
@@ -31,6 +49,24 @@
       "writtenOn": "2023-08-02T16:34:24Z",
       "side": 1,
       "message": "data-size is needed?",
+      "revId": "3dc6391b6f871b74a531f88d4c470d10240ffa18",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a112fdb_db209692",
+        "filename": "nvme.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 2482,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-08-02T16:53:21Z",
+      "side": 1,
+      "message": "Right now passing it has no effect, could potentially be used to set a bigger buffer for objl/objr",
+      "parentUuid": "000ebceb_80b673a2",
       "revId": "3dc6391b6f871b74a531f88d4c470d10240ffa18",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -54,6 +90,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4140dcec_fcbc5e87",
+        "filename": "nvme.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 2524,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-08-02T16:53:21Z",
+      "side": 1,
+      "message": "True, will remove this.",
+      "parentUuid": "57effbf2_3207a40c",
+      "revId": "3dc6391b6f871b74a531f88d4c470d10240ffa18",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c1daee10_e0dd663f",
         "filename": "nvme.c",
         "patchSetId": 11
@@ -65,6 +119,24 @@
       "writtenOn": "2023-08-02T16:34:24Z",
       "side": 1,
       "message": "On list dir, the length should be aligned to sizeof(nvme_user_obj_dirent) (which is currently 64+4\u003d68)",
+      "revId": "3dc6391b6f871b74a531f88d4c470d10240ffa18",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e4f13707_dcb45997",
+        "filename": "nvme.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 2544,
+      "author": {
+        "id": 1021031
+      },
+      "writtenOn": "2023-08-02T16:53:21Z",
+      "side": 1,
+      "message": "Same as with first comment.",
+      "parentUuid": "c1daee10_e0dd663f",
       "revId": "3dc6391b6f871b74a531f88d4c470d10240ffa18",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
