@@ -53,6 +53,7 @@ COMMAND_LIST(
 	ENTRY("objw", "Submit object write command, return results", object_write)
 	ENTRY("objl", "Submit command to retrieve all stored objects, return results", object_list)
 	ENTRY("objd", "Submit object delete command, return results", object_delete)
+	ENTRY("obje", "Submit object exist command, return results", object_exist)
 );
 
 #endif
