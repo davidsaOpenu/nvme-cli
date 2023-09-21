@@ -2156,7 +2156,6 @@ static int handle_obj_op(int argc, char **argv, int opcode, void *io, char* name
 	int err = 0;
 	struct nvme_user_obj_io *ptr = (struct nvme_user_obj_io*) io;
 	ptr->opcode = opcode;
-	ptr->offset = 0;
 	switch(opcode) {
 		case nvme_kv_store:
 			strncpy(name, argv[argc-1], NVME_OBJ_ID_MAXLEN + 1);
@@ -2218,7 +2217,7 @@ static int obj_read_parse_list(int fd, int dfd, void *io, __u32 *length, void **
 			if (skip)
 				skip = 0;
 			else
-				err += fprintf(out, "%.*s\n", key_len, ptr);
+				err = fprintf(out, "%.*s\n", key_len, ptr);
 			last_key_ptr = ptr;
 			ptr = (char*)NEXT_KEY(ptr,key_len); /* We add the length of the key and padding - key object must be aligned to a 4 byte boundary */
 		}
@@ -2229,6 +2228,81 @@ static int obj_read_parse_list(int fd, int dfd, void *io, __u32 *length, void **
 	return err < 0 ? -errno : 0;
 }
 
+static int obj_retrieve(int fd, int dfd, void *io, __u32 length, void *buffer, __u32 limit, int limited)
+{
+	int err = 0;
+	__u32 buffer_size = length;
+	struct nvme_user_obj_io* io_ptr = (struct nvme_user_obj_io*)io;
+	while (!err && buffer_size) {
+		length = buffer_size;
+		err = nvme_obj_io(fd, io, &length, &buffer);
+		if (limited)
+			length = limit < length ? limit : length;
+		if (write(dfd, buffer, length) < 0) {
+			fprintf(stderr, "failed to write buffer to output file %d\n",dfd);
+			err = EINVAL;
+		}
+		io_ptr->offset += length;
+		limit -= length;
+		if (length < buffer_size || (limited && limit == 0)) break;
+	}
+	return err;
+}
+
+/* Reads existing object, constructs post overwrite object and writes it back */
+static int obj_store(int fd, int dfd, void *io, int sect_size, void **buffer, char* name)
+{
+	int err = 0;
+	__u32 offset, length;
+	void *copy_buf = NULL;
+	struct nvme_user_obj_io* io_ptr = (struct nvme_user_obj_io*)io;
+	struct stat statbuf;
+	if (posix_memalign(&copy_buf, getpagesize(), sect_size))
+		return ENOMEM;
+	io_ptr->opcode = nvme_kv_retrieve;
+	offset = io_ptr->offset;
+	length = io_ptr->length;
+	io_ptr->offset = 0;
+	ftruncate(dfd, 0);
+	lseek(dfd, 0, SEEK_SET);
+	/* read part before overwrite offset */
+	if ((err = obj_retrieve(fd, dfd, io, sect_size, copy_buf, offset, true))) 
+	{
+		free(copy_buf);
+		return err;
+	}
+	io_ptr->offset = offset;
+	lseek(dfd, offset, SEEK_SET);
+	write(dfd, *buffer, length);
+	io_ptr->offset += length;
+	/* read part after overwrite */
+	err = obj_retrieve(fd, dfd, io, sect_size, copy_buf, 0, false); /* ignore offset past EOF here */
+	io_ptr->opcode = nvme_kv_store;
+	io_ptr->offset = 0;
+	/* check new object size - in case offset + length >= object size*/
+	if (!(err = stat(name, &statbuf)))
+		io_ptr->length = statbuf.st_size;
+	if (!err) {
+		length = 0;
+		free(*buffer);
+		if (io_ptr->length%sect_size)
+			length = (io_ptr->length/sect_size + 1) * sect_size;
+		else
+			length = io_ptr->length;
+		if (io_ptr->length && 
+			posix_memalign(buffer, getpagesize(), length))
+			return ENOMEM;
+		lseek(dfd, 0, SEEK_SET); /* return to file start */
+		if (read(dfd, (void *)*buffer, io_ptr->length) < 0)
+			return errno;
+		io_ptr->offset = 0;
+		length = io_ptr->length;
+		err = nvme_obj_io(fd, io, &length, buffer); /* write object back */
+	}
+	free(copy_buf);
+	*buffer = NULL;
+	return err;
+}
 
 static int submit_io(int opcode, char *command, const char *desc,
 		     int argc, char **argv)
@@ -2432,7 +2506,7 @@ static int submit_obj_io(int opcode, char *command, const char *desc,
 	void *buffer = NULL;
 	int err = 0;
 	int dfd = 0;
-	int flags = opcode & 1 ? O_RDONLY : O_WRONLY | O_CREAT;
+	int flags = opcode & 1 ? O_RDWR : O_WRONLY | O_CREAT;
 	int mode = S_IRUSR | S_IWUSR |S_IRGRP | S_IWGRP| S_IROTH;
 	int phys_sector_size = 0;
 	__u32 buffer_size = 0;
@@ -2442,11 +2516,13 @@ static int submit_obj_io(int opcode, char *command, const char *desc,
 	const char *latency = "output latency statistics";
 	const char *show = "show command before sending";
 	const char *dry = "show command instead of sending";
+	const char *offset = "starting byte offset for store/retrieve";
 
 	struct config {
 		int   show;
 		int   dry_run;
 		int   latency;
+		__u32 offset;
 	};
 
 	struct config cfg = {0};
@@ -2457,13 +2533,14 @@ static int submit_obj_io(int opcode, char *command, const char *desc,
 		{"show-command",      'v', "",     CFG_NONE,        &cfg.show,              no_argument,       show},
 		{"dry-run",           'w', "",     CFG_NONE,        &cfg.dry_run,           no_argument,       dry},
 		{"latency",           't', "",     CFG_NONE,        &cfg.latency,           no_argument,       latency},
+		{"offset",            'o', "NUM",  CFG_POSITIVE,    &cfg.offset,           required_argument, offset},
 		{0}
 	};
 	if (opcode != nvme_kv_list)
 		parse_and_open(argc, argv, desc, command_line_options, &cfg, sizeof(cfg));
 	else
 		get_dev(argc, argv);
-	
+	io.offset = cfg.offset;
 	if((err = handle_obj_op(argc, argv, opcode, &io, name))) {
 		perror("handle-obj-op");
 		return err;
@@ -2499,29 +2576,31 @@ static int submit_obj_io(int opcode, char *command, const char *desc,
 	}
 	gettimeofday(&start_time, NULL);
 	if (opcode == nvme_kv_retrieve) {
-		while (!err && buffer_size) {
-			length = buffer_size;
-			err = nvme_obj_io(fd, &io, &length, &buffer);
-			if (write(dfd, buffer, length) < 0) {
-				fprintf(stderr, "failed to write buffer to output file %d\n",dfd);
-				err = EINVAL;
-				goto free_and_return;
-			}
-			io.offset += length;
-			if (length < buffer_size) break;
-		}
+		length = buffer_size;
+		err = obj_retrieve(fd, dfd, &io, length, buffer, 0, false);
 	}
-	else if (opcode == nvme_kv_list)
-	{
+	else if (opcode == nvme_kv_list) {
 		length = buffer_size;
 		err = obj_read_parse_list(fd, dfd, &io, &length, &buffer);
 	}
-	else
-	{
-		length = io.length;
-		err = nvme_obj_io(fd, &io, &length, &buffer);
+	else if (opcode == nvme_kv_store) {
+		__u32 saved_len = length = io.length;
+		io.opcode = nvme_kv_exist;
+		nvme_obj_io(fd, &io, &length, NULL);
+		if (!io.length) { /* object exists */
+			io.opcode = nvme_kv_store;
+			io.length = saved_len;
+			err = obj_store(fd, dfd, &io, phys_sector_size, &buffer, name);
+		}
+		else {
+			io.opcode = nvme_kv_store;
+			length = saved_len;
+			err = nvme_obj_io(fd, &io, &length, &buffer);
+		}
 	}
-
+	else
+		err = nvme_obj_io(fd, &io, &length, &buffer);
+	close(dfd);
 	gettimeofday(&end_time, NULL);
 	if (cfg.latency)
 		printf(" latency: %s: %llu us\n",
