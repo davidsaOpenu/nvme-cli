@@ -140,7 +140,8 @@ int nvme_obj_io(int fd, void* io, __u32 *data_size, void **data)
 {
 	int err;
 	struct nvme_user_obj_io* ptr = (struct nvme_user_obj_io*)io;
-	ptr->addr = (__u64)(uintptr_t)* data;
+	if (data)
+		ptr->addr = (__u64)(uintptr_t)* data;
 	ptr->length = *data_size;
 	err = ioctl(fd, NVME_IOCTL_SUBMIT_OBJ_IO, ptr);
 	*data_size = ptr->length;

@@ -21,6 +21,8 @@ ifeq ($(LIBUDEV),0)
 	override LIB_DEPENDS += udev
 endif
 
+LDFLAGS += -lsqlite3
+
 default: $(NVME)
 
 NVME-VERSION-FILE: FORCE
@@ -32,12 +34,12 @@ NVME_DPKG_VERSION=1~`lsb_release -sc`
 
 OBJS := argconfig.o suffix.o parser.o nvme-print.o nvme-ioctl.o \
 	nvme-lightnvm.o fabrics.o json.o plugin.o intel-nvme.o \
-	lnvm-nvme.o memblaze-nvme.o
+	lnvm-nvme.o memblaze-nvme.o key_db.o
 
 nvme: nvme.c nvme.h $(OBJS) NVME-VERSION-FILE
 	$(CC) $(CPPFLAGS) $(CFLAGS) nvme.c -o $(NVME) $(OBJS) $(LDFLAGS)
 
-nvme.o: nvme.c nvme.h nvme-print.h nvme-ioctl.h argconfig.h suffix.h nvme-lightnvm.h fabrics.h
+nvme.o: nvme.c nvme.h nvme-print.h nvme-ioctl.h argconfig.h suffix.h nvme-lightnvm.h fabrics.h key_db.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 %.o: %.c %.h nvme.h linux/nvme_ioctl.h
