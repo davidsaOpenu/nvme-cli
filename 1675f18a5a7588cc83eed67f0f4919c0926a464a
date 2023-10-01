@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7ab97169_245b63ef",
+        "filename": "key_db.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2023-10-01T15:43:13Z",
+      "side": 1,
+      "message": "\"key BLOB,\" should make it simpler",
+      "range": {
+        "startLine": 54,
+        "startChar": 7,
+        "endLine": 55,
+        "endChar": 29
+      },
+      "revId": "1675f18a5a7588cc83eed67f0f4919c0926a464a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
