@@ -49,6 +49,10 @@ COMMAND_LIST(
 	ENTRY("connect-all", "Discover and Connect to NVMeoF subsystems", connect_all_cmd)
 	ENTRY("connect", "Connect to NVMeoF subsystem", connect_cmd)
 	ENTRY("disconnect", "Disconnect from NVMeoF subsystem", disconnect_cmd)
+	ENTRY("objr", "Read an object", objr_cmd)
+	ENTRY("objw", "Write an object", objw_cmd)
+	ENTRY("objl", "List all objects", objl_cmd)
+	ENTRY("objd", "Delete an object", objd_cmd)
 );
 
 #endif

@@ -375,7 +375,14 @@ enum nvme_opcode {
 	nvme_cmd_resv_report	= 0x0e,
 	nvme_cmd_resv_acquire	= 0x11,
 	nvme_cmd_resv_release	= 0x15,
+	nvme_cmd_obj_read = 0x20,
+	nvme_cmd_obj_write = 0x21,
+	nvme_cmd_obj_delete = 0x22,
+	nvme_cmd_obj_list = 0x23
 };
+
+// indication for object manipulating nvme_opcode value
+#define NVME_OBJ_MASK 0x20
 
 enum {
 	NVME_RW_LR			= 1 << 15,
