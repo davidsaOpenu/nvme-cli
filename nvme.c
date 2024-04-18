@@ -2155,6 +2155,7 @@ static int submit_io(int opcode, char *command, const char *desc,
 	struct timeval start_time, end_time;
 	void *buffer, *mbuffer = NULL;
 	int err = 0;
+	int ioctl_ret = 0;
 	int dfd, mfd;
 	int flags = opcode & 1 ? O_RDONLY : O_WRONLY | O_CREAT;
 	int metaflags = (opcode & 1 || opcode & 2) ? O_RDONLY : O_WRONLY | O_CREAT; /* in object strategy we have to write the metadata for both: read & write cmds (the metadata contains the object info...) */
@@ -2229,7 +2230,15 @@ static int submit_io(int opcode, char *command, const char *desc,
 		{0}
 	};
 
-	parse_and_open(argc, argv, desc, command_line_options, &cfg, sizeof(cfg));
+	const struct argconfig_commandline_options obj_command_line_options[] = {
+		{"data",              'd', "FILE", CFG_STRING,      &cfg.data,              required_argument, data},
+		{0}
+	};
+
+	if (opcode & NVME_OBJ_MASK)
+		parse_and_open(argc, argv, desc, obj_command_line_options, &cfg, sizeof(cfg));
+	else if (opcode != nvme_cmd_obj_list)
+		parse_and_open(argc, argv, desc, command_line_options, &cfg, sizeof(cfg));
 
 	dfd = mfd = opcode & 1 ? STDIN_FILENO : STDOUT_FILENO;
 	if (cfg.prinfo > 0xf)
@@ -2255,13 +2264,19 @@ static int submit_io(int opcode, char *command, const char *desc,
 		}
 	}
 
-	if (!cfg.data_size)	{
+	if (!cfg.data_size && !(opcode & NVME_OBJ_MASK))	{
 		fprintf(stderr, "data size not provided\n");
 		return EINVAL;
 	}
 
-	if (ioctl(fd, BLKPBSZGET, &phys_sector_size) < 0)
+	ioctl_ret = ioctl(fd, BLKPBSZGET, &phys_sector_size);
+	if (ioctl_ret < 0)
 		return errno;
+
+	// for now, we return this ioctl return value as result for
+	// all object-related commands
+	if (opcode & NVME_OBJ_MASK)
+		return ioctl_ret;
 
 	buffer_size = (cfg.block_count + 1) * phys_sector_size;
 	if (cfg.data_size < buffer_size) {
@@ -2670,6 +2685,30 @@ void register_extension(struct plugin *plugin)
 
 	nvme.extensions->tail->next = plugin;
 	nvme.extensions->tail = plugin;
+}
+
+static int objr_cmd(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Read an object.";
+	return submit_io(nvme_cmd_obj_read, "objr", desc, argc, argv);
+}
+
+static int objw_cmd(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Write an object.";
+	return submit_io(nvme_cmd_obj_write, "objw", desc, argc, argv);
+}
+
+static int objl_cmd(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "List all objects.";
+	return submit_io(nvme_cmd_obj_list, "objl", desc, argc, argv);
+}
+
+static int objd_cmd(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Delete an object.";
+	return submit_io(nvme_cmd_obj_delete, "objd", desc, argc, argv);
 }
 
 int main(int argc, char **argv)
