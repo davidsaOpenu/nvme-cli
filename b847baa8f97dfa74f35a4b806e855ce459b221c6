@@ -33,6 +33,23 @@
       "message": "recheck",
       "revId": "b847baa8f97dfa74f35a4b806e855ce459b221c6",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7082fdb1_c0c55391",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2024-05-10T02:19:13Z",
+      "side": 1,
+      "message": "verified: https://review.gerrithub.io/c/davidsaOpenu/simulator/+/556821",
+      "revId": "b847baa8f97dfa74f35a4b806e855ce459b221c6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
