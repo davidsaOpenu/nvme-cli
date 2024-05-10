@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53b513f8_0611edd4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2024-05-10T04:19:00Z",
+      "side": 1,
+      "message": "this change ID can be reused for https://trello.com/c/dZvxCgoj/107-object-read-write-delete-list-support-in-the-evssim-connecting-the-dots-between-the-qemu-and-evssim. https://review.gerrithub.io/c/davidsaOpenu/nvme-cli/+/553398 was merged.",
+      "revId": "bf8adeb1ad30a9dc714a7dc92f24f899504ed1aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
