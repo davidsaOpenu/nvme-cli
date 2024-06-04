@@ -110,8 +110,7 @@ int generate_key(char* path, void* ptr)
 	const void* blob;
 	char* new_key = NULL;
 	int first = 0;
-	char key[16];
-	__u64 hi,lo;
+	char key[8];
 	sqlite3_stmt *pstmt = NULL;
 	time_t now;
 	time(&now);
@@ -133,14 +132,11 @@ int generate_key(char* path, void* ptr)
     	}
     	sqlite3_finalize(pstmt);
     	
-    	HASH_JEN(path, len/2, hi); /* generic macro to test different functions */
-    	HASH_JEN(path + len/2, len - len/2, lo);
-    	memcpy(key, &hi, sizeof(hi));
-    	memcpy(key + 8, &lo, sizeof(lo));
+    	HASH_JEN(path, len, key);
     	do {
-		PREP_SQL(sql2)
-		sqlite3_bind_blob(pstmt, 1, (void*)&key, sizeof(__int128), NULL);
-		sqlite3_bind_text(pstmt, 2, path, len, NULL);
+			PREP_SQL(sql2)
+			sqlite3_bind_blob(pstmt, 1, (void*)&key, sizeof(__int64), NULL);
+			sqlite3_bind_text(pstmt, 2, path, len, NULL);
    		res = sqlite3_step(pstmt);
    		sqlite3_finalize(pstmt);
    		/*fprintf(stderr, "Key generation res: %d\n", res);
@@ -160,15 +156,15 @@ int generate_key(char* path, void* ptr)
    			return -res;
    		}
    		new_key = (char*) &key;
-   		for(i = 0; i < sizeof(__int128); i++) new_key[i] += (rand() % 256); /* add randomness */
-    	}while(1); /* TODO: Should have a set number of retries, this will loop infinitely */
+   		for(i = 0; i < sizeof(__int64); i++) new_key[i] += (rand() % 256); /* add randomness */
+    	} while(1); /* TODO: Should have a set number of retries, this will loop infinitely */
     	if (res != SQLITE_DONE) {
       		fprintf(stderr, "SQL exec error: %s\n", sqlite3_errmsg(db));
       		sqlite3_close(db);
       		db = NULL;
       		return -res;
     	}
-    	memcpy(ptr, key, 16);
+    	memcpy(ptr, key, 8);
    	return 0;
 }
 
