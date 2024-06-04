@@ -133,8 +133,8 @@ int generate_key(char* path, void* ptr)
     	}
     	sqlite3_finalize(pstmt);
     	
-    	HASH_JEN(path, len/2, hi); /* generic macro to test different functions */
-    	HASH_JEN(path + len/2, len - len/2, lo);
+    	HASH_JEN(path, len, hi); /* generic macro to test different functions */
+    	HASH_JEN(path, len, lo);
     	memcpy(key, &hi, sizeof(hi));
     	memcpy(key + 8, &lo, sizeof(lo));
     	do {
