@@ -2285,7 +2285,7 @@ static int obj_retrieve(int fd, int dfd, void *io, __u32 length, void *buffer, _
 		}
 		io_ptr->offset += length;
 		limit -= length;
-		if (length < buffer_size || (limited && limit == 0)) break;
+		if (length <= buffer_size || (limited && limit == 0)) break;
 	}
 	return err;
 }
