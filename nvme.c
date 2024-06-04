@@ -2166,6 +2166,7 @@ static int handle_obj_op(int argc, char **argv, int opcode, void *io, char* name
 		case nvme_kv_store:
 			strncpy(name, argv[argc-1], PATH_MAXLEN + 1);
 			/* fprintf(stderr, "Given path is: %s\n", name); */
+			memset(ptr->key, 0, sizeof(ptr->key));
 			if (generate_key(name, ptr->key)) {
 				fprintf(stderr, "Failed to generate a key for given path\n");
 				return -1;
@@ -2285,7 +2286,7 @@ static int obj_retrieve(int fd, int dfd, void *io, __u32 length, void *buffer, _
 		}
 		io_ptr->offset += length;
 		limit -= length;
-		if (length < buffer_size || (limited && limit == 0)) break;
+		if (length <= buffer_size || (limited && limit == 0)) break;
 	}
 	return err;
 }
