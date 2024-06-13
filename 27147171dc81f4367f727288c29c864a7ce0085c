@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bcf5bba5_54c5ed50",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2024-06-13T12:12:30Z",
+      "side": 1,
+      "message": "more accurate would be to say that before the change the path was split into two halves, the hash of the first half was stored in hi. The hash of the second half was stored in lo. While after the change the entire path is used for both hi and lo hash calculations. Both hi and lo now contain the same hash of the entire path.\n\nAnd here is the question: Why this change was required? IMHO, the original code combines two different hashes derived from the same string smarter reducing hash collisions.",
+      "range": {
+        "startLine": 9,
+        "startChar": 60,
+        "endLine": 11,
+        "endChar": 51
+      },
+      "revId": "27147171dc81f4367f727288c29c864a7ce0085c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
