@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f6da814_a444b856",
+        "filename": "key_db.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2024-06-17T06:32:22Z",
+      "side": 1,
+      "message": "then seem better to remove this part at all (reduces the number of operations)",
+      "range": {
+        "startLine": 137,
+        "startChar": 5,
+        "endLine": 137,
+        "endChar": 29
+      },
+      "revId": "c5f58b934bf0580edd29b2e652952fe03a4b0931",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3c618e71_5b558399",
+        "filename": "key_db.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2024-06-17T06:32:22Z",
+      "side": 1,
+      "message": "and to use __int64 here",
+      "range": {
+        "startLine": 142,
+        "startChar": 50,
+        "endLine": 142,
+        "endChar": 58
+      },
+      "revId": "c5f58b934bf0580edd29b2e652952fe03a4b0931",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
