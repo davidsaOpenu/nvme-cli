@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "54070c35_cd7cda95",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2024-06-17T06:35:30Z",
+      "side": 1,
+      "message": "and here something like \"Now,the entire path is used to calculate\nthe 64 bit hash as required by OSD reducing the number of operations\"",
+      "range": {
+        "startLine": 12,
+        "startChar": 25,
+        "endLine": 14,
+        "endChar": 14
+      },
+      "revId": "c5f58b934bf0580edd29b2e652952fe03a4b0931",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8f6da814_a444b856",
         "filename": "key_db.c",
         "patchSetId": 2
