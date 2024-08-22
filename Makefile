@@ -16,12 +16,10 @@ RM = rm -f
 AUTHOR=Keith Busch <keith.busch@intel.com>
 
 ifeq ($(LIBUDEV),0)
-	override LDFLAGS += -ludev
+	override LDFLAGS += -ludev -lsqlite3
 	override CFLAGS  += -DLIBUDEV_EXISTS
 	override LIB_DEPENDS += udev
 endif
-
-LDFLAGS += -lsqlite3
 
 default: $(NVME)
 
